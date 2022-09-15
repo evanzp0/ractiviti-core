@@ -1,0 +1,13 @@
+server:
+  ip: 0.0.0.0
+  port: 3000
+  thread_per_worker: 10
+  workers: 2
+database:
+  url: postgres://root:123456@127.0.0.1:5432/approval-flow
+  min: 0
+  max: 15
+log:
+  file: data/logs/web.log
+  level: debug
+profile: dev

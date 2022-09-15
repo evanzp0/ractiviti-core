@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<definitions>
+    <process id="bpmn_process_2" name="hello process" description="this is process_1" terminate_on_false="approval_pass">
+        <startEvent id="startEvent_1" description="this is startEvent_1"/>
+        <sequenceFlow id="flow_1" sourceRef="startEvent_1" targetRef="approvalApply_1" />
+
+        <serviceTask id="approvalApply_1" name="提交申请单" fromKey="approvalApply" />
+        <sequenceFlow id="flow_2" sourceRef="approvalApply_1" targetRef="approval_1" />
+
+        <userTask id="approval_1" name="部门审批" fromKey="approval" candidateGroups="group_1,group_2" candidateUsers="user_1,user_2" />
+        <sequenceFlow id="flow_3" sourceRef="approval_1" targetRef="decision_1" />
+
+        <!-- 分支开始 -->
+        <exclusiveGateway id="decision_1"/>
+        <sequenceFlow id="flow_4" sourceRef="decision_1" targetRef="fork_1">
+            <conditionExpression>
+                <![CDATA[
+                  approval_pass == true
+                ]]>
+            </conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flow_5" sourceRef="decision_1" targetRef="approvalApply_1">
+            <conditionExpression>
+                <![CDATA[
+                  approval_pass == false
+                ]]>
+            </conditionExpression>
+        </sequenceFlow>
+        <!-- 分支结束 -->
+
+        <!-- 会签开始 -->
+        <parallelGateway id="fork_1"/>
+        <sequenceFlow id="flow_6" sourceRef="fork_1" targetRef="accountant_approval_1"/>
+        <sequenceFlow id="flow_7" sourceRef="fork_1" targetRef="lawyer_approval_1" />
+
+        <serviceTask id="accountant_approval_1" name="财务审批" fromKey="commonApproval"/>
+        <sequenceFlow id="flow_8" sourceRef="accountant_approval_1" targetRef="fork_2" />
+
+        <serviceTask id="lawyer_approval_1" name="法务审批" fromKey="commonApproval"/>
+        <sequenceFlow id="flow_9" sourceRef="lawyer_approval_1" targetRef="fork_2" />
+
+        <parallelGateway id="fork_2"/>
+        <sequenceFlow id="flow_10" sourceRef="fork_2" targetRef="notify_1" />
+        <!-- 会签结束 -->
+
+        <serviceTask id="notify_1" name="结果邮件通知" fromKey="notify"/>
+        <sequenceFlow id="flow_11" sourceRef="notify_1" targetRef="endEvent_1" />
+
+        <endEvent id="endEvent_1"/>
+    </process>
+</definitions>
