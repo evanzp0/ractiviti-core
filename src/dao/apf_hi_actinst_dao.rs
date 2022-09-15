@@ -155,7 +155,7 @@ pub mod tests {
     use crate::model::{ApfRuExecution, ApfRuTask};
     use super::*;
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_create_hi_actinst() {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();
@@ -170,7 +170,7 @@ pub mod tests {
         tran.rollback().await.unwrap();
     }
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_find_hi_actinst_by_element() {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();

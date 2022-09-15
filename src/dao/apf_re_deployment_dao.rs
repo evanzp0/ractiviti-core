@@ -60,7 +60,7 @@ mod tests {
     use crate::model::NewApfGeBytearray;
     use super::*;
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_create_and_get_by_id() {
         let mut conn =  db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();

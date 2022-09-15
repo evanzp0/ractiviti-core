@@ -109,7 +109,7 @@ pub mod tests {
     use crate::model::ApfReProcdef;
     use super::*;
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_deploy() {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();

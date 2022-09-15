@@ -64,7 +64,7 @@ pub mod tests {
 
     use super::*;
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_create_and_delete() {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();

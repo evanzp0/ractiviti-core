@@ -86,7 +86,7 @@ pub mod tests {
     use std::any::Any;
     use crate::dao::BaseDao;
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_create_and_delete_hi_actinst() {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();

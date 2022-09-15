@@ -187,7 +187,7 @@ pub mod tests {
     use crate::manager::engine::tests::create_test_deploy;
     use super::*;
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_list() {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();

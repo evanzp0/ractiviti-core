@@ -98,7 +98,7 @@ mod tests {
     use crate::manager::engine::tests::create_test_deploy;
     use super::*;
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_complete() {
         log4rs::prepare_log();
 

@@ -8,7 +8,7 @@ use approval_flow_core::boot::db;
 use approval_flow_core::manager::engine::{ProcessEngine, TypeWrapper};
 use approval_flow_core::manager::engine::query::TaskQuery;
 
-#[actix_rt::test]
+#[tokio::test]
 async fn test_deploy() {
     log4rs::prepare_log();
 
@@ -24,7 +24,7 @@ async fn test_deploy() {
     debug!(deployment)
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn test_start_process() {
     log4rs::prepare_log();
 
@@ -42,7 +42,7 @@ async fn test_start_process() {
 
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn test_complete() {
     log4rs::prepare_log();
 
@@ -65,7 +65,7 @@ async fn test_complete() {
     task_service.complete(&task.id, Some(variables), Some("user_1".to_owned()), None).await.unwrap();
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() {
 
 }

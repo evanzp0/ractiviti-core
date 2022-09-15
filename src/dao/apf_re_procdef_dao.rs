@@ -120,7 +120,7 @@ mod tests{
     use crate::model::{NewApfGeBytearray, NewApfReDeployment, SuspensionState};
     use super::*;
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_create_and_get() {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();

@@ -68,7 +68,7 @@ mod tests {
     use crate::model::{NewApfReDeployment};
     use super::*;
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_get_by_id() {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();
@@ -81,7 +81,7 @@ mod tests {
         tran.rollback().await.unwrap();
     }
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_get_by_deployment_id() {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();
@@ -94,7 +94,7 @@ mod tests {
         tran.rollback().await.unwrap();
     }
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_create_deployment() {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();
