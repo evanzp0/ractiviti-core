@@ -35,7 +35,10 @@ async fn test_start_process() {
         Some("process_biz_key_2".to_owned()),
         None,
         None,
-        None).await.unwrap();
+        None
+    )
+    .await
+    .unwrap();
 
 }
 

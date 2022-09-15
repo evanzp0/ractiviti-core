@@ -1,9 +1,10 @@
 use chrono::NaiveDateTime;
 use sqlx::{Postgres, Transaction};
-use crate::model::{ApfHiActinst, NewApfHiActinst};
 use color_eyre::Result;
-use uuid::Uuid;
+
 use crate::error::{AppError, ErrorCode};
+use crate::gen_id;
+use crate::model::{ApfHiActinst, NewApfHiActinst};
 
 pub struct ApfHiActinstDao {
     
@@ -14,23 +15,26 @@ impl ApfHiActinstDao {
         Self {}
     }
 
-    pub async fn create(&self, obj: &NewApfHiActinst, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfHiActinst> {
-        let sql = "insert into apf_hi_actinst \
-                (rev, proc_def_id, proc_inst_id, execution_id, \
-                 task_id, element_id, element_name, element_type, \
-                 start_user_id, start_time, end_time, duration) \
-            values \
-                ($1, $2, $3, $4, \
-                 $5, $6, $7, $8, \
-                 $9, $10, $11, $12) \
-            returning * ";
-
+    pub async fn create(&self, obj: &NewApfHiActinst, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiActinst> {
+        let sql = r#"
+            insert into apf_hi_actinst (
+                rev, proc_def_id, proc_inst_id, execution_id, task_id, 
+                element_id, element_name, element_type, start_user_id, start_time, 
+                end_time, duration, id
+            ) values ( 
+                $1, $2, $3, $4, $5, 
+                $6, $7, $8, $9, $10,
+                $11, $12, $13
+            ) 
+            returning *
+        "#;
+        let new_id = gen_id();
+        
         let rst = sqlx::query_as::<_, ApfHiActinst>(sql)
             .bind(&obj.rev)
             .bind(&obj.proc_def_id)
             .bind(&obj.proc_inst_id)
-            .bind(&obj.execution_id) //
+            .bind(&obj.execution_id)
             .bind(&obj.task_id)
             .bind(&obj.element_id)
             .bind(&obj.element_name)
@@ -39,53 +43,71 @@ impl ApfHiActinstDao {
             .bind(&obj.start_time)
             .bind(&obj.end_time)
             .bind(&obj.duration)
+            .bind(&new_id)
             .fetch_one(&mut *tran)
             .await?;
 
         Ok(rst)
     }
 
-    pub async fn mark_end(&self, execution_id: &Uuid, element_id: &str,
-                              end_time: NaiveDateTime, end_user_id: Option<String>,
-                              tran: &mut Transaction<'_, Postgres>) -> Result<()> {
+    pub async fn mark_end(
+        &self, 
+        execution_id: &str, 
+        element_id: &str,
+        end_time: NaiveDateTime, 
+        end_user_id: Option<String>,
+        tran: &mut Transaction<'_, Postgres>
+    ) -> Result<()> {
         let hi_actinst = self.find_one_by_element_id(execution_id, element_id, tran).await?;
         let duration = (end_time - hi_actinst.start_time).num_milliseconds();
 
-        let sql = "update apf_hi_actinst \
-                        set rev = rev + 1, \
-                            end_time = $1, \
-                            duration = $2, \
-                            end_user_id = $3 \
-                        where id = $4 \
-                          and rev = $5 ";
+        let sql = r#"
+            update apf_hi_actinst
+            set rev = rev + 1,
+                end_time = $1,
+                duration = $2,
+                end_user_id = $3
+            where id = $4
+                and rev = $5
+        "#;
         let rst = sqlx::query(sql)
                 .bind(end_time)
                 .bind(duration)
                 .bind(end_user_id)
-                .bind(hi_actinst.id)
+                .bind(&hi_actinst.id)
                 .bind(hi_actinst.rev)
                 .execute(&mut *tran)
                 .await?;
 
         if rst.rows_affected() != 1 {
-            Err(AppError::new(ErrorCode::InternalError,
-                              Some(&format!("apf_hi_actinst({}) is not updated correctly, affects ({}) != 1",
-                                            hi_actinst.id, rst.rows_affected())),
-                              concat!(file!(), ":", line!()),
-                              None))?
+            Err(
+                AppError::new(
+                    ErrorCode::InternalError,
+                    Some(
+                        &format!(
+                            "apf_hi_actinst({}) is not updated correctly, affects ({}) != 1", 
+                            hi_actinst.id, 
+                            rst.rows_affected()
+                        )
+                    ), 
+                    concat!(file!(), ":", line!()),
+                    None
+                )
+            )?
         }
 
         Ok(())
     }
 
     #[allow(unused)]
-    pub async fn get_by_id(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>)
-            -> Result<ApfHiActinst> {
-        let sql = "select id, rev, proc_def_id, proc_inst_id, execution_id, \
-                 task_id, element_id, element_name, element_type, \
-                 start_user_id, end_user_id, start_time, end_time, duration \
-                 from apf_hi_actinst \
-                 where id = $1 ";
+    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiActinst> {
+        let sql = r#"
+            select id, rev, proc_def_id, proc_inst_id, execution_id, 
+                task_id, element_id, element_name, element_type,
+                start_user_id, end_user_id, start_time, end_time, duration
+            from apf_hi_actinst
+            where id = $1
+        "#;
 
         let rst = sqlx::query_as::<_, ApfHiActinst>(sql)
             .bind(id)
@@ -95,16 +117,20 @@ impl ApfHiActinstDao {
         Ok(rst)
     }
 
-    pub async fn find_one_by_element_id(&self, execution_id: &Uuid,
-                                            element_id: &str,
-                                            tran: &mut Transaction<'_, Postgres>)
-            -> Result<ApfHiActinst> {
-        let sql = "select id, rev, proc_def_id, proc_inst_id, execution_id, \
-                 task_id, element_id, element_name, element_type, \
-                 start_user_id, end_user_id, start_time, end_time, duration \
-                 from apf_hi_actinst \
-                 where execution_id = $1 \
-                   and element_id = $2 ";
+    pub async fn find_one_by_element_id(
+        &self, 
+        execution_id: &str, 
+        element_id: &str, 
+        tran: &mut Transaction<'_, Postgres>
+    ) -> Result<ApfHiActinst> {
+        let sql = r#"
+            select id, rev, proc_def_id, proc_inst_id, execution_id,
+                task_id, element_id, element_name, element_type,
+                start_user_id, end_user_id, start_time, end_time, duration
+            from apf_hi_actinst
+            where execution_id = $1
+                and element_id = $2 
+        "#;
 
         // ptln!("{} , {}, {}", sql, execution_id, element_id);
 

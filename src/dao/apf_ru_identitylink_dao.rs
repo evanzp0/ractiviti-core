@@ -1,7 +1,6 @@
 use color_eyre::Result;
 use sqlx::{Postgres, Transaction};
-use uuid::Uuid;
-use crate::model::{ApfRuIdentitylink, NewApfRuIdentitylink};
+use crate::{model::{ApfRuIdentitylink, NewApfRuIdentitylink}, gen_id};
 
 pub struct ApfRuIdentitylinkDao {
 
@@ -12,28 +11,35 @@ impl ApfRuIdentitylinkDao {
         Self {}
     }
 
-    pub async fn create(&self, obj: &NewApfRuIdentitylink, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfRuIdentitylink> {
-        let sql = "insert into apf_ru_identitylink \
-                (rev, ident_type, group_id, user_id, task_id, proc_inst_id, proc_def_id) \
-            values \
-                (1, $1, $2, $3, $4, $5, $6) \
-            returning * ";
+    pub async fn create(&self, obj: &NewApfRuIdentitylink, tran: &mut Transaction<'_, Postgres>) -> Result<ApfRuIdentitylink> {
+        let sql = r#"
+            insert into apf_ru_identitylink (
+                rev, ident_type, group_id, user_id, task_id, 
+                proc_inst_id, proc_def_id, id
+            ) values (
+                $1, $2, $3, $4, $5, 
+                $6, $7, $8
+            )
+            returning *
+        "#;
+        let new_id = gen_id();
 
         let rst = sqlx::query_as::<_, ApfRuIdentitylink>(sql)
+            .bind(1)
             .bind(&obj.ident_type)
             .bind(&obj.group_id)
             .bind(&obj.user_id)
             .bind(&obj.task_id)
             .bind(&obj.proc_inst_id)
             .bind(&obj.proc_def_id)
+            .bind(new_id)
             .fetch_one(&mut *tran)
             .await?;
 
         Ok(rst)
     }
 
-    pub async fn delete_by_task_id(&self, task_id: &Uuid, tran: &mut Transaction<'_, Postgres>)
+    pub async fn delete_by_task_id(&self, task_id: &str, tran: &mut Transaction<'_, Postgres>)
             -> Result<u64> {
         let sql = "delete from apf_ru_identitylink \
                         where task_id = $1";

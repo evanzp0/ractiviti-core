@@ -1,7 +1,6 @@
 use chrono::NaiveDateTime;
 use color_eyre::Result;
 use sqlx::{Error, Postgres, Transaction};
-use uuid::Uuid;
 use crate::error::{AppError, ErrorCode};
 use crate::model::{ApfHiVarinst, ApfRuVariable, NewApfHiVarinst};
 
@@ -14,15 +13,13 @@ impl ApfHiVarinstDao {
         Self {}
     }
 
-    pub async fn create_by_variable(&self, variable: &ApfRuVariable, create_time: NaiveDateTime,
-                                        tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfHiVarinst> {
+    pub async fn create_by_variable(&self, variable: &ApfRuVariable, create_time: NaiveDateTime, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiVarinst> {
         let hi_new_var = NewApfHiVarinst {
-            id: variable.id,
+            id: variable.id.clone(),
             var_type: variable.var_type.clone(),
             name: variable.name.to_owned(),
             value: variable.value.to_owned(),
-            proc_inst_id: variable.proc_inst_id,
+            proc_inst_id: variable.proc_inst_id.clone(),
             execution_id: variable.execution_id.clone(),
             task_id: variable.task_id.clone(),
             create_time,
@@ -34,13 +31,15 @@ impl ApfHiVarinstDao {
         Ok(rst)
     }
 
-    pub async fn create(&self, obj: &NewApfHiVarinst, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfHiVarinst> {
-        let sql = "insert into apf_hi_varinst \
-                (rev, id, var_type, name, value, proc_inst_id, execution_id, task_id, create_time, last_updated_time) \
-            values \
-                (1, $1, $2, $3, $4, $5, $6, $7, $8, $9) \
-            returning * ";
+    pub async fn create(&self, obj: &NewApfHiVarinst, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiVarinst> {
+        let sql = r#"
+            insert into apf_hi_varinst (
+                rev, id, var_type, name, value, proc_inst_id, execution_id, task_id, create_time, last_updated_time
+            ) values (
+                1, $1, $2, $3, $4, $5, $6, $7, $8, $9
+            )
+            returning *
+        "#;
 
         let rst = sqlx::query_as::<_, ApfHiVarinst>(sql)
             .bind(&obj.id)
@@ -58,11 +57,13 @@ impl ApfHiVarinstDao {
         Ok(rst)
     }
 
-    pub async fn get_by_id(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfHiVarinst> {
-        let sql = "select id, rev, var_type, name, value, proc_inst_id, execution_id, task_id, create_time, last_updated_time \
-                        from apf_hi_varinst \
-                        where id = $1";
+    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiVarinst> {
+        let sql = r#"
+            select id, rev, var_type, name, value,
+                proc_inst_id, execution_id, task_id, create_time, last_updated_time 
+            from apf_hi_varinst
+            where id = $1
+        "#;
 
         let rst = sqlx::query_as::<_, ApfHiVarinst>(sql)
             .bind(id)
@@ -72,8 +73,7 @@ impl ApfHiVarinstDao {
         Ok(rst)
     }
 
-    pub async fn create_or_update_by_variable(&self, variable: &ApfRuVariable, update_time: NaiveDateTime, tran: &mut Transaction<'_, Postgres>)
-                -> Result<ApfHiVarinst> {
+    pub async fn create_or_update_by_variable(&self, variable: &ApfRuVariable, update_time: NaiveDateTime, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiVarinst> {
         let mut rst_hi_var = self.get_by_id(&variable.id, tran).await;
         match &mut rst_hi_var {
             Ok(_) => {
@@ -96,8 +96,7 @@ impl ApfHiVarinstDao {
         Ok(hi_var)
     }
 
-    pub async fn update_by_variable(&self, variable: &ApfRuVariable, update_time: NaiveDateTime, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<()> {
+    pub async fn update_by_variable(&self, variable: &ApfRuVariable, update_time: NaiveDateTime, tran: &mut Transaction<'_, Postgres>) -> Result<()> {
         let mut hi_var = self.get_by_id(&variable.id, tran).await?;
         hi_var.var_type = variable.var_type.clone();
         hi_var.value = variable.value.clone();
@@ -109,18 +108,19 @@ impl ApfHiVarinstDao {
         Ok(())
     }
 
-    pub async fn update(&self, obj: &ApfHiVarinst, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<()> {
-        let sql = "update apf_hi_varinst \
-                        set rev = rev + 1, \
-                            var_type = $1, \
-                            name = $2, \
-                            value = $3, \
-                            execution_id = $4, \
-                            task_id = $5, \
-                            last_updated_time = $6 \
-                        where id = $7 \
-                          and rev = $8";
+    pub async fn update(&self, obj: &ApfHiVarinst, tran: &mut Transaction<'_, Postgres>) -> Result<()> {
+        let sql = r#"
+            update apf_hi_varinst
+            set rev = rev + 1,
+                var_type = $1,
+                name = $2,
+                value = $3,
+                execution_id = $4,
+                task_id = $5,
+                last_updated_time = $6
+            where id = $7
+                and rev = $8
+        "#;
 
         let rst = sqlx::query(sql)
             .bind(&obj.var_type)
@@ -135,17 +135,25 @@ impl ApfHiVarinstDao {
             .await?;
 
         if rst.rows_affected() != 1 {
-            Err(AppError::new(ErrorCode::InternalError,
-                              Some(&format!("apf_hi_varinst({}) is not updated correctly, affects ({}) != 1",
-                                            obj.id, rst.rows_affected())),
-                              concat!(file!(), ":", line!()),
-                              None))?
+            Err(
+                AppError::new(
+                    ErrorCode::InternalError,
+                    Some(
+                        &format!(
+                            "apf_hi_varinst({}) is not updated correctly, affects ({}) != 1", 
+                            obj.id,
+                            rst.rows_affected()
+                        )
+                    ),
+                    concat!(file!(), ":", line!()), 
+                    None
+                )
+            )?
         }
 
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 pub mod tests {

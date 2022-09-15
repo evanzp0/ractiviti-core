@@ -4,10 +4,10 @@ server:
   thread_per_worker: 10
   workers: 2
 database:
-  url: postgres://root:123456@127.0.0.1:5432/approval-flow
+  url: postgres://root:111111@127.0.0.1:5432/ractiviti
   min: 0
   max: 15
 log:
-  file: data/logs/web.log
+  file: data/logs/ractiviti.log
   level: debug
 profile: dev

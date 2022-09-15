@@ -42,11 +42,6 @@ impl BpmnEdge for SequenceFlow {
     }
 
     fn to_node(&self, process: &BpmnProcess) -> Option<Arc<dyn BpmnNode>> {
-        // let node_map = &process.node_map;
-        // let node = node_map.get(&self.target_ref)
-        //     .and_then(|value| Some((*value).clone()));
-        // node
-
         let element_map = &process.element_map;
         let element = element_map.get(&self.target_ref);
         let mut rst: Option<Arc<dyn BpmnNode>> = None;
@@ -62,8 +57,7 @@ impl BpmnEdge for SequenceFlow {
 }
 
 impl SequenceFlow {
-    pub fn new(id: String, source_ref: String, target_ref: String, condition_expression: Option<String>)
-            -> Self {
+    pub fn new(id: String, source_ref: String, target_ref: String, condition_expression: Option<String>) -> Self {
         Self {
             id,
             source_ref,

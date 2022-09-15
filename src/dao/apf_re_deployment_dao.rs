@@ -1,7 +1,6 @@
 use sqlx::{Postgres, Transaction};
 use color_eyre::Result;
-use crate::model::{ApfReDeployment, NewApfReDeployment};
-use uuid::Uuid;
+use crate::{model::{ApfReDeployment, NewApfReDeployment}, gen_id};
 use validator::Validate;
 
 pub struct ApfReDeploymentDao {}
@@ -12,11 +11,14 @@ impl ApfReDeploymentDao {
         Self {}
     }
 
-    pub async fn get_by_id(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>)
+    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>)
             -> Result<ApfReDeployment> {
-        let sql = "select id, name, key, organization, deployer, deploy_time \
-                        from apf_re_deployment \
-                        where id = $1 ";
+        let sql = r#"
+            select id, name, key, organization, deployer, deploy_time 
+            from apf_re_deployment
+            where id = $1
+        "#;
+
         let rst = sqlx::query_as::<_, ApfReDeployment>(sql)
             .bind(&id)
             .fetch_one(&mut *tran)
@@ -28,12 +30,17 @@ impl ApfReDeploymentDao {
     pub async fn create(&self, obj: &NewApfReDeployment, tran: &mut Transaction<'_, Postgres>)
                 -> Result<ApfReDeployment> {
         obj.validate()?;
-        let sql = "insert into apf_re_deployment \
-                        (name, key, organization, deployer) \
-                        values \
-                        ($1, $2, $3, $4) \
-                        returning * ";
+        let sql = r#"insert into apf_re_deployment (
+                id, name, key, organization, deployer
+            ) values (
+                $1, $2, $3, $4, $5
+            )
+            returning *
+        "#;
+        let new_id = gen_id();
+
         let rst = sqlx::query_as::<_, ApfReDeployment>(sql)
+            .bind(new_id)
             .bind(&obj.name)
             .bind(&obj.key)
             .bind(&obj.organization)

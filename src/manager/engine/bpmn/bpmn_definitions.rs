@@ -68,8 +68,7 @@ impl BpmnDefinitions {
 
     fn allow_zero_inflow(node: &Arc<dyn BpmnNode>, in_flows_len: usize) -> Result<()> {
         if in_flows_len != 0_usize {
-            let msg = format!("{:?}({}) 不能有输入边 (len: {})",
-                              node.get_node_type(), node.get_id(), in_flows_len);
+            let msg = format!("{:?}({}) 不能有输入边 (len: {})", node.get_node_type(), node.get_id(), in_flows_len);
 
             Err(AppError::new(
                 ErrorCode::ParseError,
@@ -84,8 +83,7 @@ impl BpmnDefinitions {
 
     fn allow_zero_outflow(node: &Arc<dyn BpmnNode>, out_flows_len: usize) -> Result<()> {
         if out_flows_len != 0_usize {
-            let msg = format!("{:?}({}) 不能有输出边 (len: {})",
-                              node.get_node_type(), node.get_id(), out_flows_len);
+            let msg = format!("{:?}({}) 不能有输出边 (len: {})", node.get_node_type(), node.get_id(), out_flows_len);
 
             Err(AppError::new(
                 ErrorCode::ParseError,
@@ -100,8 +98,7 @@ impl BpmnDefinitions {
 
     fn allow_one_outflow(node: &Arc<dyn BpmnNode>, out_flows_len: usize) -> Result<()> {
         if out_flows_len != 1_usize {
-            let msg = format!("{:?}({}) 有且只能有1条输出边 (len: {})",
-                              node.get_node_type(), node.get_id(), out_flows_len);
+            let msg = format!("{:?}({}) 有且只能有1条输出边 (len: {})", node.get_node_type(), node.get_id(), out_flows_len);
             Err(AppError::new(
                 ErrorCode::ParseError,
                 Some(&msg),
@@ -115,8 +112,7 @@ impl BpmnDefinitions {
 
     fn allow_at_least_one_inflow(node: &Arc<dyn BpmnNode>, in_flows_len: usize) -> Result<()> {
         if in_flows_len == 0_usize {
-            let msg = format!("{:?}({}) 至少要有1条输入边 (len: {})",
-                              node.get_node_type(), node.get_id(), in_flows_len);
+            let msg = format!("{:?}({}) 至少要有1条输入边 (len: {})", node.get_node_type(), node.get_id(), in_flows_len);
 
             Err(AppError::new(
                 ErrorCode::ParseError,
@@ -131,8 +127,7 @@ impl BpmnDefinitions {
 
     fn allow_at_least_one_outflow(node: &Arc<dyn BpmnNode>, out_flows_len: usize) -> Result<()> {
         if out_flows_len == 0_usize {
-            let msg = format!("{:?}({}) 至少要有1条输出边 (len: {})",
-                              node.get_node_type(), node.get_id(), out_flows_len);
+            let msg = format!("{:?}({}) 至少要有1条输出边 (len: {})", node.get_node_type(), node.get_id(), out_flows_len);
 
             Err(AppError::new(
                 ErrorCode::ParseError,

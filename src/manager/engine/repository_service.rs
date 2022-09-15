@@ -1,9 +1,9 @@
 use sqlx::{Postgres, Transaction};
-use uuid::Uuid;
+use color_eyre::Result;
+
 use crate::dao::ApfGeBytearrayDao;
 use crate::manager::engine::{BpmnManager, BpmnProcess};
 use super::DeploymentBuilder;
-use color_eyre::Result;
 
 #[derive(Debug)]
 pub struct RepositoryService{
@@ -22,8 +22,7 @@ impl RepositoryService {
     }
 
 
-    pub async fn load_bpmn_by_deployment<'a>(&self, deployment_id: &Uuid, tran: &mut Transaction<'a, Postgres>)
-                                             -> Result<BpmnProcess> {
+    pub async fn load_bpmn_by_deployment<'a>(&self, deployment_id: &str, tran: &mut Transaction<'a, Postgres>) -> Result<BpmnProcess> {
         let bytearray_dao = ApfGeBytearrayDao::new();
         let ge_byte = bytearray_dao.get_by_deployment_id(deployment_id, tran).await?;
 

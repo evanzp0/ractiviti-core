@@ -15,10 +15,7 @@ pub fn run_script(js_code: String, global_vars: &HashMap<String, JsValue>) -> Re
         g_obj.set(k.to_string(), v, true, context)
             .map_err(|e| {
                 let s = format!("Uncaught {}", e.display());
-                AppError::new(ErrorCode::InternalError,
-                                  Some(&s),
-                                  concat!(file!(), ":", line!()),
-                                  None)
+                AppError::new(ErrorCode::InternalError, Some(&s), concat!(file!(), ":", line!()), None)
             })?;
     }
 
@@ -27,10 +24,7 @@ pub fn run_script(js_code: String, global_vars: &HashMap<String, JsValue>) -> Re
         Err(e) => {
             // Pretty print the error
             let s = format!("Uncaught {}", e.display());
-            Err(AppError::new(ErrorCode::InternalError,
-                              Some(&s),
-                              concat!(file!(), ":", line!()),
-                              None))?
+            Err(AppError::new(ErrorCode::InternalError, Some(&s), concat!(file!(), ":", line!()), None))?
         }
     };
 

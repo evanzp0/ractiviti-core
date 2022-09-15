@@ -3,11 +3,13 @@ use std::sync::Arc;
 use chrono::NaiveDateTime;
 use crate::{ArcRw, get_now};
 use crate::error::{AppError, ErrorCode};
-use crate::manager::engine::{BpmnEdge, BpmnElement, NodeType, OperateRst, Operator, OperatorContext, TakeOutgoingFlowsOperator, TypeWrapper};
+use crate::manager::engine::{
+    BpmnEdge, BpmnElement, NodeType, OperateRst, Operator, 
+    OperatorContext, TakeOutgoingFlowsOperator, TypeWrapper
+};
 use crate::model::{ApfRuExecution, ApfRuTask, ApfRuVariableDto, NewApfHiActinst, NewApfRuExecution, VarType};
 use color_eyre::Result;
 use sqlx::{Postgres, Transaction};
-use uuid::Uuid;
 use crate::dao::{ApfHiActinstDao, ApfHiVarinstDao, ApfRuExecutionDao, ApfRuVariableDao};
 use crate::manager::engine::query::TaskQuery;
 
@@ -21,8 +23,13 @@ pub struct BaseOperator {
 }
 
 impl BaseOperator {
-    pub fn new(proc_inst: Arc<ApfRuExecution>, current_exec: Option<ArcRw<ApfRuExecution>>,
-               element:BpmnElement, terminate_element: Option<BpmnElement>, current_task: Option<Arc<ApfRuTask>>) -> Self {
+    pub fn new(
+        proc_inst: Arc<ApfRuExecution>, 
+        current_exec: Option<ArcRw<ApfRuExecution>>, 
+        element:BpmnElement, 
+        terminate_element: Option<BpmnElement>, 
+        current_task: Option<Arc<ApfRuTask>>
+    ) -> Self {
         Self {
             proc_inst,
             current_exec,
@@ -41,20 +48,14 @@ impl BaseOperator {
     }
 
     pub fn current_task_ex(&self) -> Result<Arc<ApfRuTask>> {
-        let current_task = self.current_task.clone().ok_or(
-            AppError::new(ErrorCode::NotFound,
-                          Some("current task not found"),
-                          concat!(file!(), ":", line!()),
-                          None))?;
+        let current_task = self.current_task.clone()
+            .ok_or(AppError::new(ErrorCode::NotFound, Some("current task not found"), concat!(file!(), ":", line!()), None))?;
         Ok(current_task)
     }
 
     pub fn current_excution_ex(&self) -> Result<ArcRw<ApfRuExecution>> {
-        let current_exec = self.current_exec.clone().ok_or(
-            AppError::new(ErrorCode::NotFound,
-                          Some("current execution not found"),
-                          concat!(file!(), ":", line!()),
-                          None))?;
+        let current_exec = self.current_exec.clone()
+            .ok_or(AppError::new(ErrorCode::NotFound, Some("current execution not found"), concat!(file!(), ":", line!()), None))?;
         Ok(current_exec)
     }
 
@@ -62,10 +63,14 @@ impl BaseOperator {
             -> Result<()> {
         match &self.element {
             BpmnElement::Edge(_) => {
-                Err(AppError::new(ErrorCode::NotFound,
-                                  Some("source bpmn node not found when taking outgoing flows"),
-                                  concat!(file!(), ":", line!()),
-                                  None))?
+                Err(
+                    AppError::new(
+                        ErrorCode::NotFound,
+                        Some("source bpmn node not found when taking outgoing flows"), 
+                        concat!(file!(), ":", line!()), 
+                        None
+                    )
+                )?
             },
             BpmnElement::Node(node) => {
                 let bpmn_process = operator_ctx.bpmn_process_ex()?;
@@ -83,16 +88,24 @@ impl BaseOperator {
                         self._continue_outflow(operator_ctx, &out_flows, tran).await?;
                     },
                     NodeType::ExclusiveGateway => {
-                        Err(AppError::new(ErrorCode::NotSupportError,
-                                          Some("ExclusiveGateway node is not supported by continue_outflow()"),
-                                          concat!(file!(), ":", line!()),
-                                          None))?
+                        Err(
+                            AppError::new(
+                                ErrorCode::NotSupportError,
+                                Some("ExclusiveGateway node is not supported by continue_outflow()"),
+                                concat!(file!(), ":", line!()),
+                                None
+                            )
+                        )?
                     },
                     NodeType::ParallelGateway => {
-                        Err(AppError::new(ErrorCode::NotFound,
-                                          Some("ParallelGateway is not supported by continue_outflow()"),
-                                          concat!(file!(), ":", line!()),
-                                          None))?
+                        Err(
+                            AppError::new(
+                                ErrorCode::NotFound,
+                                    Some("ParallelGateway is not supported by continue_outflow()"),
+                                    concat!(file!(), ":", line!()),
+                                    None
+                                )
+                        )?
                     }
                 }
             },
@@ -101,11 +114,15 @@ impl BaseOperator {
         Ok(())
     }
 
-    pub async fn mark_begin_exection<'a>(&self, element_id: &str, start_user: Option<String>,
-                                   start_time: NaiveDateTime,
-                                   tran: &mut Transaction<'a, Postgres>) -> Result<()> {
+    pub async fn mark_begin_exection<'a>(
+        &self, 
+        element_id: &str, 
+        start_user: Option<String>, 
+        start_time: NaiveDateTime, 
+        tran: &mut Transaction<'a, Postgres>
+    ) -> Result<()> {
         let current_exec = self.current_excution_ex()?;
-        let current_exec_id = current_exec.read().unwrap().id;
+        let current_exec_id = current_exec.read().unwrap().id.clone();
         current_exec.write().unwrap().element_id = Some(element_id.to_owned());
         current_exec.write().unwrap().start_user = start_user.clone();
         current_exec.write().unwrap().start_time = start_time;
@@ -116,8 +133,7 @@ impl BaseOperator {
         Ok(())
     }
 
-    pub async fn mark_end_execution<'a>(&self, operator_ctx: &OperatorContext,
-                                        tran: &mut Transaction<'a, Postgres>) -> Result<()> {
+    pub async fn mark_end_execution<'a>(&self, operator_ctx: &OperatorContext, tran: &mut Transaction<'a, Postgres>) -> Result<()> {
         let current_exec = self.current_excution_ex()?;
         let current_exec_id = &current_exec.read().unwrap().id;
         let element_id = current_exec.read().unwrap().element_id()?;
@@ -130,14 +146,15 @@ impl BaseOperator {
         Ok(())
     }
 
-    async fn _continue_outflow<'a>(&self, operator_ctx: &OperatorContext, out_flows: &Vec<Arc<dyn BpmnEdge>>,
-                         tran: &mut Transaction<'a, Postgres>) -> Result<()> {
+    async fn _continue_outflow<'a>(
+        &self, 
+        operator_ctx: &OperatorContext, 
+        out_flows: &Vec<Arc<dyn BpmnEdge>>, 
+        tran: &mut Transaction<'a, Postgres>
+    ) -> Result<()> {
         let current_exec = self.current_excution_ex()?;
-        let out_flow = out_flows.get(0).ok_or(
-            AppError::new(ErrorCode::NotFound,
-                          Some("start event must have 1 outflow"),
-                          concat!(file!(), ":", line!()),
-                          None))?;
+        let out_flow = out_flows.get(0)
+            .ok_or(AppError::new(ErrorCode::NotFound, Some("start event must have 1 outflow"), concat!(file!(), ":", line!()), None))?;
         let element = BpmnElement::Edge(out_flow.clone());
         let element_id = out_flow.get_id();
 
@@ -152,8 +169,7 @@ impl BaseOperator {
         Ok(())
     }
 
-    pub async fn create_hi_actinst<'a>(&self, task_id: Option<Uuid>,
-                tran: &mut Transaction<'a, Postgres>) -> Result<OperateRst> {
+    pub async fn create_hi_actinst<'a>(&self, task_id: Option<String>, tran: &mut Transaction<'a, Postgres>) -> Result<OperateRst> {
         let new_hi_actinst = NewApfHiActinst {
             rev: 1,
             proc_def_id: self.proc_inst.proc_def_id.clone(),
@@ -174,9 +190,13 @@ impl BaseOperator {
         Ok(OperateRst::default())
     }
 
-    pub async fn create_current_execution<'a>(&self, element_id: &str, start_time: NaiveDateTime,
-                                              start_user: Option<String>, tran: &mut Transaction<'a, Postgres>)
-            -> Result<ApfRuExecution> {
+    pub async fn create_current_execution<'a>(
+        &self, 
+        element_id: &str, 
+        start_time: NaiveDateTime, 
+        start_user: Option<String>, 
+        tran: &mut Transaction<'a, Postgres>
+    ) -> Result<ApfRuExecution> {
         let new_exec = NewApfRuExecution {
             parent_id: Some(self.proc_inst.id.clone()),
             proc_inst_id: Some(self.proc_inst.id.clone()),
@@ -194,10 +214,7 @@ impl BaseOperator {
         Ok(current_execution)
     }
 
-    pub async fn create_or_update_variables<'a>(&self, variables: ArcRw<HashMap<String, TypeWrapper>>,
-                                              tran: &mut Transaction<'a, Postgres>)
-                -> Result<()>{
-
+    pub async fn create_or_update_variables<'a>(&self, variables: ArcRw<HashMap<String, TypeWrapper>>, tran: &mut Transaction<'a, Postgres>) -> Result<()>{
         for (key, value) in variables.read().unwrap().iter() {
             let mut dto = ApfRuVariableDto::default();
             dto.var_type = VarType::from((*value).clone()) ;

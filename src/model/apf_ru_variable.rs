@@ -1,20 +1,20 @@
 use std::collections::HashMap;
-use uuid::Uuid;
 use serde::Serialize;
 use sqlx::FromRow;
+
 use crate::manager::engine::TypeWrapper;
 use super::VarType;
 
 #[derive(Debug, Serialize, FromRow, PartialEq, Default, Clone)]
 pub struct ApfRuVariable {
-    pub id: Uuid,
+    pub id: String,
     pub rev: i32,
     pub var_type: VarType,
     pub name: String,
     pub value: String,
-    pub proc_inst_id: Uuid,
-    pub execution_id: Option<Uuid>,
-    pub task_id: Option<Uuid>,
+    pub proc_inst_id: String,
+    pub execution_id: Option<String>,
+    pub task_id: Option<String>,
 }
 
 #[derive(Debug, Default)]
@@ -22,9 +22,9 @@ pub struct ApfRuVariableDto {
     pub var_type: VarType,
     pub name: String,
     pub value: String,
-    pub proc_inst_id: Uuid,
-    pub execution_id: Option<Uuid>,
-    pub task_id: Option<Uuid>,
+    pub proc_inst_id: String,
+    pub execution_id: Option<String>,
+    pub task_id: Option<String>,
 }
 
 impl ApfRuVariable {
@@ -46,6 +46,7 @@ impl ApfRuVariable {
 
     pub fn convert_variables_to_map(variables: &Vec<ApfRuVariable>) -> HashMap<String, TypeWrapper> {
         let mut rst_map: HashMap<String, TypeWrapper> = HashMap::new();
+        
         for ru_var in variables {
             rst_map.insert(ru_var.name.clone(), TypeWrapper::from(ru_var.clone()));
         }

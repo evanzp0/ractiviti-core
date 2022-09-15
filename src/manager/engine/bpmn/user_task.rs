@@ -42,8 +42,14 @@ impl BpmnNode for UserTask {
 }
 
 impl UserTask {
-    pub fn new(id: String, name: Option<String>, from_key: Option<String>, description: Option<String>,
-               candidate_groups: Option<String>, candidate_users: Option<String>) -> Self {
+    pub fn new(
+        id: String, 
+        name: Option<String>, 
+        from_key: Option<String>, 
+        description: Option<String>,
+        candidate_groups: Option<String>, 
+        candidate_users: Option<String>
+    ) -> Self {
         let mut candidate_groups_arr = vec![];
         let mut candidate_users_arr = vec![];
 

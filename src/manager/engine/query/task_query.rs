@@ -1,16 +1,17 @@
 use std::any::Any;
+
 use color_eyre::Result;
 use rstring_builder::StringBuilder;
 use sqlx::{Postgres, Transaction};
-use uuid::Uuid;
+
 use crate::dao::{ApfRuTaskDao, BaseDao, SqlFragment as SF};
 use crate::model::ApfRuTask;
 
 #[derive(Debug, Default)]
 pub struct TaskQuery {
-    id: Option<Uuid>,
-    execution_id: Option<Uuid>,
-    proc_inst_id: Option<Uuid>,
+    id: Option<String>,
+    execution_id: Option<String>,
+    proc_inst_id: Option<String>,
     candidate_group: Option<String>,
     candidate_user: Option<String>,
     business_key: Option<String>,
@@ -21,10 +22,12 @@ pub struct TaskQuery {
 
 #[allow(unused)]
 impl TaskQuery {
-    pub const SELECT_FIELD:&'static str = "t1.id, t1.rev, t1.execution_id, t1.proc_inst_id, t1.proc_def_id, \
-                 t1.element_id, t1.element_name, t1.element_type, t1.business_key, \
-                 t1.description, t1.start_user_id, t1.create_time, \
-                 t1.suspension_state, t1.form_key";
+    pub const SELECT_FIELD:&'static str = r#"
+        t1.id, t1.rev, t1.execution_id, t1.proc_inst_id, t1.proc_def_id,
+        t1.element_id, t1.element_name, t1.element_type, t1.business_key,
+        t1.description, t1.start_user_id, t1.create_time,
+        t1.suspension_state, t1.form_key 
+    "#;
 
     const FROM_TABLE:&'static str = " from apf_ru_task ";
 
@@ -39,18 +42,18 @@ impl TaskQuery {
         self
     }
 
-    pub fn id(mut self, id: &Uuid) -> Self {
-        self.id = Some(id.clone());
+    pub fn id(mut self, id: &str) -> Self {
+        self.id = Some(id.to_owned());
         self
     }
 
-    pub fn execution_id(mut self, execution_id: &Uuid) -> Self {
-        self.execution_id = Some(execution_id.clone());
+    pub fn execution_id(mut self, execution_id: &str) -> Self {
+        self.execution_id = Some(execution_id.to_owned());
         self
     }
 
-    pub fn proc_inst_id(mut self, proc_inst_id: &Uuid) -> Self {
-        self.proc_inst_id = Some(proc_inst_id.clone());
+    pub fn proc_inst_id(mut self, proc_inst_id: &str) -> Self {
+        self.proc_inst_id = Some(proc_inst_id.to_owned());
         self
     }
 
@@ -128,16 +131,16 @@ impl TaskQuery {
         sql_builder.append(SF::WHERE);
 
         let mut idx = 0;
-        if let Some(v) = self.execution_id {
+        if let Some(v) = &self.execution_id {
             idx += 1;
             sql_builder.append(SF::AND(format!("t1.execution_id = ${}", idx)));
-            params.push(Box::new(v));
+            params.push(Box::new(v.clone()));
         }
 
-        if let Some(v) = self.proc_inst_id {
+        if let Some(v) = &self.proc_inst_id {
             idx += 1;
             sql_builder.append(SF::AND(format!("t1.proc_inst_id = ${}", idx)));
-            params.push(Box::new(v));
+            params.push(Box::new(v.clone()));
         }
 
         if let Some(v) = &self.business_key {
@@ -195,7 +198,7 @@ pub mod tests {
         let task1 = create_test_task(&proc_inst, &mut tran).await;
 
         let tasks = TaskQuery::new()
-            .execution_id(&Uuid::default())
+            .execution_id("test_exec_id_1")
             .candidate_user(Some("test_user_id_1".to_owned()))
             .candidate_group(Some("test_group_id_1, test_group_id_2".to_owned()))
             .process_definition_key("test_process_definition_key")

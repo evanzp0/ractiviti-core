@@ -1,5 +1,4 @@
 use chrono::NaiveDateTime;
-use uuid::Uuid;
 use serde::Serialize;
 use sqlx::FromRow;
 use crate::error::AppError;
@@ -7,11 +6,11 @@ use color_eyre::Result;
 
 #[derive(Debug, Serialize, FromRow, PartialEq, Default)]
 pub struct ApfRuTask {
-    pub id: Uuid,
+    pub id: String,
     pub rev: i32,
-    pub execution_id: Uuid,
-    pub proc_inst_id: Uuid,
-    pub proc_def_id: Uuid,
+    pub execution_id: String,
+    pub proc_inst_id: String,
+    pub proc_def_id: String,
     pub element_id: Option<String>,
     pub element_name: Option<String>,
     pub element_type: Option<String>,
@@ -26,9 +25,9 @@ pub struct ApfRuTask {
 #[derive(Debug, Default)]
 pub struct NewApfRuTask {
     pub rev: i32,
-    pub execution_id: Uuid,
-    pub proc_inst_id: Uuid,
-    pub proc_def_id: Uuid,
+    pub execution_id: String,
+    pub proc_inst_id: String,
+    pub proc_def_id: String,
     pub element_id: Option<String>,
     pub element_name: Option<String>,
     pub element_type: Option<String>,
@@ -42,8 +41,9 @@ pub struct NewApfRuTask {
 
 impl ApfRuTask {
     pub fn element_id_ex(&self) -> Result<String> {
-        let rst = self.element_id.clone().ok_or(
-            AppError::notfound_error(concat!(file!(), ":", line!())))?;
+        let rst = self.element_id
+            .clone()
+            .ok_or(AppError::notfound_error(concat!(file!(), ":", line!())))?;
 
         Ok(rst)
     }

@@ -39,10 +39,13 @@ impl BpmnProcess {
             }
         }
 
-        Err(AppError::new(ErrorCode::NotFound,
-                          Some("StartEvent is not found"),
-                          concat!(file!(), ":", line!()),
-                          None))?
+        Err(
+            AppError::new(
+                ErrorCode::NotFound, 
+                Some("StartEvent is not found"), 
+                concat!(file!(), ":", line!()), None
+            )
+        )?
     }
 
     pub fn end_event_terminate_node_ex(&self) -> Result<BpmnElement> {

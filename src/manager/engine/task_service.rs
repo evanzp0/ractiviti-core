@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use sqlx::{Acquire, Postgres, Transaction};
-use uuid::Uuid;
 use color_eyre::Result;
 use crate::{ArcRw, get_now};
 use crate::boot::db;
@@ -20,10 +19,13 @@ impl TaskService {
         Self {}
     }
 
-    pub async fn complete<'a>(&self, task_id: &Uuid,
-                              variables: Option<ArcRw<HashMap<String, TypeWrapper>>>,
-                              user_id: Option<String>,
-                              group_id: Option<String>) -> Result<()> {
+    pub async fn complete<'a>(
+        &self, 
+        task_id: &str,
+        variables: Option<ArcRw<HashMap<String, TypeWrapper>>>,
+        user_id: Option<String>,
+        group_id: Option<String>
+    ) -> Result<()> {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();
 
@@ -36,7 +38,7 @@ impl TaskService {
         Ok(())
     }
 
-    pub async fn _complete<'a>(&self, task_id: &Uuid, operator_ctx: &mut OperatorContext, tran: &mut Transaction<'a, Postgres>) -> Result<()> {
+    pub async fn _complete<'a>(&self, task_id: &str, operator_ctx: &mut OperatorContext, tran: &mut Transaction<'a, Postgres>) -> Result<()> {
         let task_dao = ApfRuTaskDao::new();
         let current_task = task_dao.get_by_id(task_id, tran).await?;
 
@@ -60,7 +62,7 @@ impl TaskService {
                 name: key.to_owned(),
                 value: value.as_str(),
                 proc_inst_id: current_task.proc_inst_id.clone(),
-                execution_id: Some(current_task.execution_id),
+                execution_id: Some(current_task.execution_id.clone()),
                 task_id: Some(current_task.id.clone()),
             };
             let variable = var_dao.create_or_update(&dto, tran).await?;
@@ -76,10 +78,12 @@ impl TaskService {
         let proc_inst = execution_dao.get_by_id(&current_task.proc_inst_id, tran).await?;
         let current_execution = execution_dao.get_by_id(&current_task.execution_id, tran).await?;
 
-        let complete_task_cmd = CompleteTaskCmd::new(element.clone(),
-                                                     Arc::new(proc_inst),
-                                                     Some(Arc::new(RwLock::new(current_execution))),
-                                                     Some(Arc::new(current_task)));
+        let complete_task_cmd = CompleteTaskCmd::new(
+            element.clone(), 
+            Arc::new(proc_inst), 
+            Some(Arc::new(RwLock::new(current_execution))), 
+            Some(Arc::new(current_task))
+        );
 
         let mut operator_exec = OperatorExecutor::new();
         operator_exec.execute(Operator::CompleteTaskCmd(complete_task_cmd), operator_ctx, tran).await?;

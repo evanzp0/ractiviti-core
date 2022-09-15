@@ -1,8 +1,10 @@
 use std::fs::File;
 use std::io::BufRead;
+
 use color_eyre::Result;
 use std::io::BufReader;
 use sqlx::{Acquire, Postgres, Transaction};
+
 use crate::boot::db;
 use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao, ApfReProcdefDao};
 use crate::error::{AppError, ErrorCode};
@@ -36,15 +38,9 @@ impl DeploymentBuilder {
         let f = File::open(path)?;
         let meta = f.metadata()?;
         if meta.len() > 1024 * 1024 * 2 {
-            Err(AppError::new(ErrorCode::InternalError,
-                              Some(&format!("文件大小不能超过 2M ({})", path)),
-                              concat!(file!(), ":", line!()),
-                              None))?
+            Err(AppError::new(ErrorCode::InternalError, Some(&format!("文件大小不能超过 2M ({})", path)), concat!(file!(), ":", line!()), None))?
         } else if meta.len() == 0 {
-            Err(AppError::new(ErrorCode::InternalError,
-                              Some(&format!("文件大小不能为 0 ({})", path)),
-                              concat!(file!(), ":", line!()),
-                              None))?
+            Err(AppError::new(ErrorCode::InternalError, Some(&format!("文件大小不能为 0 ({})", path)), concat!(file!(), ":", line!()), None))?
         }
 
         let mut reader = BufReader::new(f);
@@ -71,8 +67,7 @@ impl DeploymentBuilder {
         Ok(deployment)
     }
 
-    pub async fn _deploy<'a>(&mut self, tran: &mut Transaction<'a, Postgres>)
-                             -> Result<ApfReDeployment> {
+    pub async fn _deploy<'a>(&mut self, tran: &mut Transaction<'a, Postgres>) -> Result<ApfReDeployment> {
         let bpmn_xml = String::from_utf8(self.new_deployment.new_bytearray.bytes.clone()
                 .unwrap_or(Vec::new()))?;
 

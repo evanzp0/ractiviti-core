@@ -1,7 +1,6 @@
 use sqlx::{Error, Postgres, Transaction};
 use color_eyre::Result;
-use uuid::Uuid;
-use crate::model::{ApfReProcdef, NewApfReProcdef};
+use crate::{model::{ApfReProcdef, NewApfReProcdef}, gen_id};
 
 pub struct ApfReProcdefDao {}
 
@@ -10,12 +9,13 @@ impl ApfReProcdefDao {
         Self {}
     }
 
-    pub async fn get_by_id(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>)
-                               -> Result<ApfReProcdef> {
-        let sql = "select id, rev, name, key, version, deployment_id, resource_name, \
-                        description, suspension_state \
-                        from apf_re_procdef \
-                        where id = $1 ";
+    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfReProcdef> {
+        let sql = r#"
+            select id, rev, name, key, version, deployment_id, resource_name,
+                description, suspension_state
+            from apf_re_procdef
+            where id = $1 
+        "#;
         let rst = sqlx::query_as::<_, ApfReProcdef>(sql)
             .bind(id)
             .fetch_one(&mut *tran)
@@ -24,12 +24,13 @@ impl ApfReProcdefDao {
         Ok(rst)
     }
 
-    pub async fn get_by_deplyment_id(&self, deployment_id: &Uuid, tran: &mut Transaction<'_, Postgres>)
-                                        -> Result<ApfReProcdef> {
-        let sql = "select id, rev, name, key, version, deployment_id, resource_name, \
-                        description, suspension_state \
-                        from apf_re_procdef \
-                        where deployment_id = $1 ";
+    pub async fn get_by_deplyment_id(&self, deployment_id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfReProcdef> {
+        let sql = r#"
+            select id, rev, name, key, version, deployment_id, resource_name,
+                description, suspension_state
+            from apf_re_procdef
+            where deployment_id = $1 
+        "#;
         let rst = sqlx::query_as::<_, ApfReProcdef>(sql)
             .bind(deployment_id)
             .fetch_one(&mut *tran)
@@ -38,14 +39,15 @@ impl ApfReProcdefDao {
         Ok(rst)
     }
 
-    pub async fn get_lastest_by_key(&self, key: &str, tran: &mut Transaction<'_, Postgres>)
-                               -> Result<ApfReProcdef> {
-        let sql = "select id, rev, name, key, version, deployment_id, resource_name, \
-                        description, suspension_state \
-                        from apf_re_procdef \
-                        where key = $1 \
-                          and suspension_state = 0 \
-                        order by version desc";
+    pub async fn get_lastest_by_key(&self, key: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfReProcdef> {
+        let sql = r#"
+            select id, rev, name, key, version, 
+                deployment_id, resource_name, description, suspension_state
+            from apf_re_procdef
+            where key = $1
+                and suspension_state = 0
+            order by version desc
+        "#;
         let rst = sqlx::query_as::<_, ApfReProcdef>(sql)
             .bind(key)
             .fetch_one(&mut *tran)
@@ -54,13 +56,13 @@ impl ApfReProcdefDao {
         Ok(rst)
     }
 
-    pub async fn create(&self, obj: &NewApfReProcdef, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfReProcdef> {
-
-        let sql = "select version from apf_re_procdef \
-                         where key = $1 \
-                         order by version desc \
-                         limit 1";
+    pub async fn create(&self, obj: &NewApfReProcdef, tran: &mut Transaction<'_, Postgres>) -> Result<ApfReProcdef> {
+        let sql = r#"
+            select version 
+            from apf_re_procdef 
+            where key = $1 
+            order by version desc limit 1
+        "#;
         let rst = sqlx::query_scalar::<_, i32>(sql)
             .bind(&obj.key)
             .fetch_one(&mut *tran)
@@ -81,18 +83,28 @@ impl ApfReProcdefDao {
             }
         }
 
-        let sql = "insert into apf_re_procdef \
-                    (name, rev, key, version, deployment_id, resource_name, description, suspension_state) \
-                values ($1, 1, $2, $3, $4, $5, $6, $7) \
-                returning *";
+        let sql = r#"
+            insert into apf_re_procdef (
+                name, rev, key, version, deployment_id, 
+                resource_name, description, suspension_state, id
+            ) values (
+                $1, $2, $3, $4, $5, 
+                $6, $7, $8, $9
+            )
+            returning *
+        "#;
+        let new_id = gen_id();
+
         let rst = sqlx::query_as::<_, ApfReProcdef>(sql)
             .bind(&obj.name)
+            .bind(1)
             .bind(&obj.key)
             .bind(version)
             .bind(&obj.deployment_id)
             .bind(&obj.resource_name)
             .bind(&obj.description)
             .bind(&obj.suspension_state)
+            .bind(new_id)
             .fetch_one(&mut *tran)
             .await?;
 

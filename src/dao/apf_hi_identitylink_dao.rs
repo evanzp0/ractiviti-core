@@ -1,5 +1,6 @@
 use color_eyre::Result;
 use sqlx::{Postgres, Transaction};
+
 use crate::model::{ApfHiIdentitylink, ApfRuIdentitylink, NewApfHiIdentitylink};
 
 pub struct ApfHiIdentitylinkDao {
@@ -11,15 +12,16 @@ impl ApfHiIdentitylinkDao {
         Self {}
     }
 
-    pub async fn create(&self, obj: &NewApfHiIdentitylink, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfHiIdentitylink> {
-        let sql = "insert into apf_hi_identitylink \
-                (rev, id, ident_type, group_id, user_id, task_id, proc_inst_id, proc_def_id) \
-            values \
-                (1, $1, $2, $3, $4, $5, $6, $7) \
-            returning * ";
+    pub async fn create(&self, obj: &NewApfHiIdentitylink, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiIdentitylink> {
+        let sql = r#"
+            insert into apf_hi_identitylink
+                (rev, id, ident_type, group_id, user_id, task_id, proc_inst_id, proc_def_id)
+            values
+                ($1, $2, $3, $4, $5, $6, $7,$8)
+            returning *"#;
 
         let rst = sqlx::query_as::<_, ApfHiIdentitylink>(sql)
+            .bind(1)
             .bind(&obj.id)
             .bind(&obj.ident_type)
             .bind(&obj.group_id)
@@ -33,10 +35,9 @@ impl ApfHiIdentitylinkDao {
         Ok(rst)
     }
 
-    pub async fn create_from_ident_link(&self, ident_link: &ApfRuIdentitylink, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfHiIdentitylink> {
+    pub async fn create_from_ident_link(&self, ident_link: &ApfRuIdentitylink, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiIdentitylink> {
         let new_hi_ident = NewApfHiIdentitylink {
-            id: ident_link.id,
+            id: ident_link.id.clone(),
             ident_type: ident_link.ident_type.clone(),
             group_id: ident_link.group_id.clone(),
             user_id: ident_link.user_id.clone(),

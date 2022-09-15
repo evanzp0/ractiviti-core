@@ -1,16 +1,15 @@
-use uuid::Uuid;
 use validator::Validate;
 use serde::{Serialize, Deserialize};
 use sqlx::FromRow;
 
 #[derive(Debug, Serialize, FromRow, PartialEq, Default)]
 pub struct ApfReProcdef {
-    pub id: Uuid,
+    pub id: String,
     pub rev: i32,
     pub name:  Option<String>,
     pub key: String,
     pub version: i32,
-    pub deployment_id: Uuid,
+    pub deployment_id: String,
     pub resource_name: Option<String>,
     pub description: Option<String>,
     pub suspension_state: i32,
@@ -29,7 +28,7 @@ impl SuspensionState {
 pub struct NewApfReProcdef {
     pub name: Option<String>,
     pub key: String,
-    pub deployment_id: Uuid,
+    pub deployment_id: String,
     pub resource_name: Option<String>,
     pub description: Option<String>,
     pub suspension_state: i32,

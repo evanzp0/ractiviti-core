@@ -1,7 +1,6 @@
 use color_eyre::Result;
 use sqlx::{Postgres, Transaction};
-use uuid::Uuid;
-use crate::model::{ApfRuTask, NewApfRuTask};
+use crate::{model::{ApfRuTask, NewApfRuTask}, gen_id};
 
 pub struct ApfRuTaskDao {
 }
@@ -11,25 +10,26 @@ impl ApfRuTaskDao {
         Self {}
     }
 
-    pub async fn create(&self, obj: &NewApfRuTask, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfRuTask> {
-        let sql = "insert into apf_ru_task \
-                (rev, execution_id, proc_inst_id, proc_def_id, \
-                 element_id, element_name, element_type, business_key, \
-                 description, start_user_id, create_time, \
-                 suspension_state, form_key) \
-            values \
-                ($1, $2, $3, $4, \
-                 $5, $6, $7, $8, \
-                 $9, $10, $11, $12, \
-                 $13) \
-            returning * ";
+    pub async fn create(&self, obj: &NewApfRuTask, tran: &mut Transaction<'_, Postgres>) -> Result<ApfRuTask> {
+        let sql = r#"
+            insert into apf_ru_task (
+                rev, execution_id, proc_inst_id, proc_def_id, element_id,
+                element_name, element_type, business_key, description, start_user_id, 
+                create_time, suspension_state, form_key, id
+            ) values (
+                $1, $2, $3, $4, $5, 
+                $6, $7, $8, $9, $10, 
+                $11, $12, $13, $14
+            )
+            returning *
+        "#;
+        let new_id = gen_id();
 
         let rst = sqlx::query_as::<_, ApfRuTask>(sql)
             .bind(obj.rev)
             .bind(&obj.execution_id)
             .bind(&obj.proc_inst_id)
-            .bind(&obj.proc_def_id) //
+            .bind(&obj.proc_def_id)
             .bind(&obj.element_id)
             .bind(&obj.element_name)
             .bind(&obj.element_type)
@@ -39,15 +39,15 @@ impl ApfRuTaskDao {
             .bind(&obj.create_time)
             .bind(&obj.suspension_state)
             .bind(&obj.form_key)
+            .bind(new_id)
             .fetch_one(&mut *tran)
             .await?;
 
         Ok(rst)
     }
 
-    pub async fn delete(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>) -> Result<u64> {
-        let sql = "delete from apf_ru_task \
-                         where id = $1 ";
+    pub async fn delete(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<u64> {
+        let sql = r#"delete from apf_ru_task where id = $1"#;
         let rst = sqlx::query(sql)
             .bind(id)
             .execute(&mut *tran)
@@ -56,14 +56,15 @@ impl ApfRuTaskDao {
         Ok(rst.rows_affected())
     }
 
-    pub async fn get_by_id(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>)
+    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>)
                 -> Result<ApfRuTask> {
-        let sql = "select id, rev, execution_id, proc_inst_id, proc_def_id, \
-                 element_id, element_name, element_type, business_key, \
-                 description, start_user_id, create_time, \
-                 suspension_state, form_key \
-                 from apf_ru_task \
-                 where id = $1 ";
+        let sql = r#"
+            select id, rev, execution_id, proc_inst_id, proc_def_id, 
+                element_id, element_name, element_type, business_key, description, 
+                start_user_id, create_time, suspension_state, form_key
+            from apf_ru_task
+            where id = $1
+        "#;
         let rst = sqlx::query_as::<_, ApfRuTask>(sql)
             .bind(id)
             .fetch_one(&mut *tran)
@@ -102,15 +103,17 @@ pub mod tests {
 
         // test find by crieria
         let sql = "select * from apf_ru_task where id = $1 and element_id = $2 and suspension_state = $3";
-        let params: Vec<Box<dyn Any>> = vec![Box::new(task.id),
-                                             Box::new(task.element_id.clone()),
-                                             Box::new(Some(task.suspension_state.clone()))];
+        let params: Vec<Box<dyn Any>> = vec![
+            Box::new(task.id.clone()),
+            Box::new(task.element_id.clone()),
+            Box::new(Some(task.suspension_state.clone()))
+        ];
         let rst = BaseDao::find_by_crieria::<ApfRuTask>(sql, &params, &mut tran).await.unwrap();
         assert_eq!(rst.len(), 1);
 
         // test fetch one by crieria
         let rst = BaseDao::fetch_one_by_crieria::<ApfRuTask>(sql, &params, &mut tran).await.unwrap();
-        assert_eq!(rst.id, task.id);
+        assert_eq!(rst.id, task.id.clone());
 
         // test count
         let sql = "select count(*) from apf_ru_task where id = $1 and element_id = $2 and suspension_state = $3";

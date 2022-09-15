@@ -41,7 +41,7 @@ impl CreateAndStartProcessInstanceCmd {
         let hi_procinst_dao = ApfHiProcinstDao::new();
         let new_hi_procinst = NewApfHiProcinst {
             id: proc_inst.id.to_owned(),
-            proc_inst_id: proc_inst.id,
+            proc_inst_id: proc_inst.id.clone(),
             business_key: proc_inst.business_key.to_owned(),
             proc_def_id: proc_inst.proc_def_id.to_owned(),
             start_time: proc_inst.start_time,
@@ -53,11 +53,7 @@ impl CreateAndStartProcessInstanceCmd {
 
 
         // create or update variables
-        let base_operator = BaseOperator::new(proc_inst.clone(),
-                                              None,
-                                              start_event.clone(),
-                                              None,
-                                              None);
+        let base_operator = BaseOperator::new(proc_inst.clone(), None, start_event.clone(), None, None);
         base_operator.create_or_update_variables(operator_ctx.variables.clone(), tran).await?;
 
         // continue to handle start event operator

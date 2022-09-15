@@ -28,34 +28,25 @@ impl BpmnManager {
         let doc = Document::parse_str(&xml)
             .map_err(|err| {
                 error!("{:?}", err);
-                AppError::new(ErrorCode::ParseError,
-                              Some("BPMN 文件解析错误"),
-                              concat!(file!(), ":", line!()),
-                              None)})?;
+                AppError::new(
+                    ErrorCode::ParseError,
+                    Some("BPMN 文件解析错误"),
+                    concat!(file!(), ":", line!()),
+                    None
+                )
+            })?;
 
         let root_el = doc.root_element()
-            .ok_or(AppError::new(ErrorCode::ParseError,
-                                 Some("BPMN 文件格式错误，缺少根节点"),
-                                 concat!(file!(), ":", line!()),
-                                 None))?;
+            .ok_or(AppError::new(ErrorCode::ParseError, Some("BPMN 文件格式错误，缺少根节点"), concat!(file!(), ":", line!()), None))?;
         if root_el.name(&doc) != "definitions" {
-            Err(AppError::new(ErrorCode::ParseError,
-                              Some("BPMN 文件格式错误，缺少 definitions 节点"),
-                              concat!(file!(), ":", line!()),
-                              None))?;
+            Err(AppError::new(ErrorCode::ParseError, Some("BPMN 文件格式错误，缺少 definitions 节点"), concat!(file!(), ":", line!()), None))?;
         }
 
         let proc_el = root_el.find(&doc, "process")
-            .ok_or(AppError::new(ErrorCode::ParseError,
-                                 Some("BPMN 文件格式错误，缺少 process 节点"),
-                                 concat!(file!(), ":", line!()),
-                                 None))?;
+            .ok_or(AppError::new(ErrorCode::ParseError, Some("BPMN 文件格式错误，缺少 process 节点"), concat!(file!(), ":", line!()), None))?;
 
         let proc_id = proc_el.attribute(&doc, "id")
-            .ok_or(AppError::new(ErrorCode::ParseError,
-                                 Some("BPMN 文件格式错误，process 节点缺少 id 属性"),
-                                 concat!(file!(), ":", line!()),
-                                 None))?;
+            .ok_or(AppError::new(ErrorCode::ParseError, Some("BPMN 文件格式错误，process 节点缺少 id 属性"), concat!(file!(), ":", line!()), None))?;
         let proc_name = proc_el.attribute(&doc, "name")
             .and_then(|s| Some(s.to_owned()));
 
@@ -76,10 +67,7 @@ impl BpmnManager {
 
         for child_el in proc_el.child_elements(&doc) {
             let id = child_el.attribute(&doc, "id").ok_or(
-                AppError::new(ErrorCode::ParseError,
-                              Some(&format!("Bpmn element 缺少 id 属性")),
-                              concat!(file!(), ":", line!()),
-                              None))?;
+                AppError::new(ErrorCode::ParseError, Some(&format!("Bpmn element 缺少 id 属性")), concat!(file!(), ":", line!()), None))?;
             let el_name = child_el.name(&doc).to_string();
             let description = child_el.attribute(&doc, "description")
                 .and_then(|s| Some(s.to_owned()));
@@ -103,8 +91,7 @@ impl BpmnManager {
                 let candidate_users = child_el.attribute(&doc, "candidateUsers")
                     .and_then(|s| Some(s.to_owned()));
 
-                let node = Arc::new(UserTask::new(id.to_owned(), name, from_key,
-                                                  description.clone(), candidate_groups, candidate_users));
+                let node = Arc::new(UserTask::new(id.to_owned(), name, from_key, description.clone(), candidate_groups, candidate_users));
                 Self::add_node(id, node, pe_elements, element_map)?;
             } else if el_name == "serviceTask" {
                 let name = child_el.attribute(&doc, "name")
@@ -116,8 +103,7 @@ impl BpmnManager {
                 let candidate_users = child_el.attribute(&doc, "candidateUsers")
                     .and_then(|s| Some(s.to_owned()));
 
-                let node = Arc::new(ServiceTask::new(id.to_owned(), name, from_key,
-                                                     description.clone(), candidate_groups, candidate_users));
+                let node = Arc::new(ServiceTask::new(id.to_owned(), name, from_key, description.clone(), candidate_groups, candidate_users));
                 Self::add_node(id, node, pe_elements, element_map)?;
             } else if el_name == "exclusiveGateway" {
                 let node = Arc::new(ExclusiveGateway::new(id.to_owned(), description.clone()));
@@ -139,10 +125,7 @@ impl BpmnManager {
                         condition_express = Some(condition.trim().to_owned());
                     }
                 }
-                let edge = Arc::new(SequenceFlow::new(id.to_owned(),
-                                                      source,
-                                                      target,
-                                                      condition_express));
+                let edge = Arc::new(SequenceFlow::new(id.to_owned(), source, target, condition_express));
                 Self::add_edge(id, edge, pe_elements, element_map)?;
             }
         }
@@ -152,14 +135,19 @@ impl BpmnManager {
         Ok(bpmn_def)
     }
 
-    fn add_node(id: &str, node: Arc<dyn BpmnNode>, pe_elements: &mut Vec<BpmnElement>,
-                element_map: &mut HashMap<String, BpmnElement>) -> Result<()> {
+    fn add_node(
+        id: &str, 
+        node: Arc<dyn BpmnNode>, 
+        pe_elements: &mut Vec<BpmnElement>, 
+        element_map: &mut HashMap<String, BpmnElement>
+    ) -> Result<()> {
         pe_elements.push(BpmnElement::Node(node.clone()));
         if element_map.contains_key(id) {
-            let app_err = AppError::new(ErrorCode::ParseError,
-                                        Some(&format!("Bmpn 中存在重复的 id = {}", id)),
-                                        concat!(file!(), ":", line!()),
-                                        None);
+            let app_err = AppError::new(
+                ErrorCode::ParseError,
+                Some(&format!("Bmpn 中存在重复的 id = {}", id)), concat!(file!(), ":", line!()),
+                None
+            );
             Err(app_err)?
         } else {
             element_map.insert(id.to_owned(), BpmnElement::Node(node.clone()));
@@ -172,10 +160,10 @@ impl BpmnManager {
                 element_map: &mut HashMap<String, BpmnElement>) -> Result<()> {
         pe_elements.push(BpmnElement::Edge(edge.clone()));
         if element_map.contains_key(id) {
-            let app_err = AppError::new(ErrorCode::ParseError,
-                                        Some(&format!("Bmpn 中存在重复的 id = {}", id)),
-                                        concat!(file!(), ":", line!()),
-                                        None);
+            let app_err = AppError::new(
+                ErrorCode::ParseError,
+                Some(&format!("Bmpn 中存在重复的 id = {}", id)),concat!(file!(), ":", line!()),None
+            );
             Err(app_err)?
         } else {
             element_map.insert(id.to_owned(), BpmnElement::Edge(edge.clone()));

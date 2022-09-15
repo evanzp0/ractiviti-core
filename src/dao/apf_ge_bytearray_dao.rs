@@ -1,8 +1,8 @@
 use sqlx::{Postgres, Transaction};
 use color_eyre::Result;
-use uuid::Uuid;
 use validator::Validate;
-use crate::model::{ApfGeBytearray, NewApfGeBytearray};
+
+use crate::{model::{ApfGeBytearray, NewApfGeBytearray}, gen_id};
 
 pub struct ApfGeBytearrayDao;
 impl ApfGeBytearrayDao {
@@ -11,11 +11,12 @@ impl ApfGeBytearrayDao {
         Self{}
     }
 
-    pub async fn get_by_id(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>)
-                               -> Result<ApfGeBytearray> {
-        let sql = "select id, name, deployment_id, bytes \
-                        from apf_ge_bytearray \
-                        where id = $1 ";
+    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfGeBytearray> {
+        let sql = r#"
+            select id, name, deployment_id, bytes
+            from apf_ge_bytearray
+            where id = $1 
+        "#;
         let rst = sqlx::query_as::<_, ApfGeBytearray>(sql)
             .bind(id)
             .fetch_one(&mut *tran)
@@ -24,11 +25,12 @@ impl ApfGeBytearrayDao {
         Ok(rst)
     }
 
-    pub async fn get_by_deployment_id(&self, deployment_id: &Uuid, tran: &mut Transaction<'_, Postgres>)
-                                          -> Result<ApfGeBytearray> {
-        let sql = "select id, name, deployment_id, bytes \
-                        from apf_ge_bytearray \
-                        where deployment_id = $1 ";
+    pub async fn get_by_deployment_id(&self, deployment_id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfGeBytearray> {
+        let sql = r#"
+            select id, name, deployment_id, bytes
+            from apf_ge_bytearray
+            where deployment_id = $1
+        "#;
         let rst = sqlx::query_as::<_, ApfGeBytearray>(sql)
             .bind(deployment_id)
             .fetch_one(&mut *tran)
@@ -37,13 +39,17 @@ impl ApfGeBytearrayDao {
         Ok(rst)
     }
 
-    pub async fn create(&self, obj: &NewApfGeBytearray, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfGeBytearray> {
+    pub async fn create(&self, obj: &NewApfGeBytearray, tran: &mut Transaction<'_, Postgres>) -> Result<ApfGeBytearray> {
         obj.validate()?;
-        let sql = "insert into apf_ge_bytearray (name, deployment_id, bytes) \
-                values ($1, $2, $3) \
-                returning *";
+        let sql = r#"
+            insert into apf_ge_bytearray (id, name, deployment_id, bytes)
+            values ($1, $2, $3, $4)
+            returning *
+        "#;
+        let new_id = gen_id();
+
         let rst = sqlx::query_as::<_, ApfGeBytearray>(sql)
+            .bind(&new_id)
             .bind(&obj.name)
             .bind(&obj.deployment_id)
             .bind(&obj.bytes)

@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use color_eyre::Result;
 use sqlx::{Postgres, Transaction};
-use uuid::Uuid;
+
 use crate::error::{AppError, ErrorCode};
 use crate::model::{ApfHiProcinst, NewApfHiProcinst};
 
@@ -14,15 +14,17 @@ impl ApfHiProcinstDao {
         Self {}
     }
 
-    pub async fn create(&self, obj: &NewApfHiProcinst, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfHiProcinst> {
-        let sql = "insert into apf_hi_procinst \
-                (id, rev, proc_inst_id, business_key, \
-                proc_def_id, start_time, start_user, start_element_id) \
-            values \
-                ($1, 1, $2, $3, \
-                $4, $5, $6, $7) \
-            returning * ";
+    pub async fn create(&self, obj: &NewApfHiProcinst, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiProcinst> {
+        let sql = r#"
+            insert into apf_hi_procinst (
+                id, rev, proc_inst_id, business_key,
+                proc_def_id, start_time, start_user, start_element_id
+            ) values (
+                $1, 1, $2, $3,
+                $4, $5, $6, $7
+            ) 
+            returning *
+        "#;
 
         let rst = sqlx::query_as::<_, ApfHiProcinst>(sql)
             .bind(&obj.id)
@@ -38,19 +40,19 @@ impl ApfHiProcinstDao {
         Ok(rst)
     }
 
-    pub async fn mark_end(&self, id: &Uuid, end_element_id: &str, end_time: NaiveDateTime,
-                              tran: &mut Transaction<'_, Postgres>)
-            -> Result<()> {
+    pub async fn mark_end(&self, id: &str, end_element_id: &str, end_time: NaiveDateTime, tran: &mut Transaction<'_, Postgres>) -> Result<()> {
         let hi_procinst = self.get_by_id(id, tran).await?;
         let duration = (end_time - hi_procinst.start_time).num_milliseconds();
 
-        let sql = "update apf_hi_procinst \
-                        set rev = rev + 1, \
-                            end_time = $1, \
-                            duration = $2, \
-                            end_element_id = $3 \
-                        where id = $4 \
-                          and rev = $5 ";
+        let sql = r#"
+            update apf_hi_procinst
+            set rev = rev + 1,
+                end_time = $1,
+                duration = $2,
+                end_element_id = $3
+            where id = $4
+                and rev = $5
+        "#;
 
         let rst = sqlx::query(sql)
             .bind(end_time)
@@ -62,22 +64,29 @@ impl ApfHiProcinstDao {
             .await?;
 
         if rst.rows_affected() != 1 {
-            Err(AppError::new(ErrorCode::InternalError,
-                              Some(&format!("apf_hi_procinst({}) is not updated correctly, affects ({}) != 1",
-                                            hi_procinst.id, rst.rows_affected())),
-                              concat!(file!(), ":", line!()),
-                              None))?
+            Err(
+                AppError::new(
+                    ErrorCode::InternalError, 
+                    Some(
+                        &format!(
+                            "apf_hi_procinst({}) is not updated correctly, affects ({}) != 1", 
+                            hi_procinst.id, rst.rows_affected()
+                        )
+                    ), 
+                    concat!(file!(), ":", line!()), None))?
         }
 
         Ok(())
     }
 
-    pub async fn get_by_id(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiProcinst> {
-        let sql = "select id, rev, proc_inst_id, business_key, \
-                                proc_def_id, start_time, start_user, start_element_id,\
-                                end_time, duration, end_element_id \
-                         from apf_hi_procinst \
-                         where id = $1";
+    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiProcinst> {
+        let sql = r#"
+            select id, rev, proc_inst_id, business_key,
+                proc_def_id, start_time, start_user, start_element_id,
+                end_time, duration, end_element_id
+            from apf_hi_procinst
+            where id = $1
+        "#;
 
         let rst = sqlx::query_as::<_, ApfHiProcinst>(sql).bind(id)
             .fetch_one(&mut *tran)
@@ -113,17 +122,17 @@ mod tests {
         let proc_inst = exec_dao.create_proc_inst(&new_exec,&mut tran).await.unwrap();
         let hi_procinst_dao = ApfHiProcinstDao::new();
         let hi_obj = NewApfHiProcinst {
-            id: proc_inst.id,
-            proc_inst_id: proc_inst.proc_def_id,
+            id: proc_inst.id.clone(),
+            proc_inst_id: proc_inst.proc_def_id.clone(),
             business_key: proc_inst.business_key,
-            proc_def_id: proc_inst.proc_def_id,
+            proc_def_id: proc_inst.proc_def_id.clone(),
             start_time: proc_inst.start_time,
             start_user: proc_inst.start_user,
             start_element_id: proc_inst.element_id,
         };
 
         let hi_procinst = hi_procinst_dao.create(&hi_obj, &mut tran).await.unwrap();
-        assert_eq!(hi_procinst.id, proc_inst.id);
+        assert_eq!(hi_procinst.id, proc_inst.id.clone());
 
         hi_procinst_dao.mark_end(&proc_inst.id, "end_event_1", get_now(), &mut tran).await.unwrap();
 

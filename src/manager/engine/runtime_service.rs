@@ -20,12 +20,14 @@ impl RuntimeService {
         Self {}
     }
 
-    pub async fn start_process_instance_by_key<'a>(&self, process_definition_key: &str,
-                                                   business_key: Option<String>,
-                                                   variables: Option<ArcRw<HashMap<String, TypeWrapper>>>,
-                                               user_id: Option<String>,
-                                               group_id: Option<String>)
-            -> Result<Arc<ApfRuExecution>> {
+    pub async fn start_process_instance_by_key<'a>(
+        &self, 
+        process_definition_key: &str,
+        business_key: Option<String>,
+        variables: Option<ArcRw<HashMap<String, TypeWrapper>>>,
+        user_id: Option<String>,
+        group_id: Option<String>)
+    -> Result<Arc<ApfRuExecution>> {
         let mut conn = db::get_connect().await.unwrap();
         let mut tran = conn.begin().await.unwrap();
 
@@ -39,11 +41,13 @@ impl RuntimeService {
         Ok(rst)
     }
 
-    pub async fn _start_process_instance_by_key<'a>(&self, process_definition_key: &str,
-                                                    business_key: Option<String>,
-                                                    operator_ctx: &mut OperatorContext,
-                                                    tran: &mut Transaction<'a, Postgres>)
-                                                    -> Result<Arc<ApfRuExecution>>  {
+    pub async fn _start_process_instance_by_key<'a>(
+        &self, 
+        process_definition_key: &str,
+        business_key: Option<String>,
+        operator_ctx: &mut OperatorContext,
+        tran: &mut Transaction<'a, Postgres>)
+    -> Result<Arc<ApfRuExecution>>  {
         let procdef_dao = ApfReProcdefDao::new();
         let re_def = procdef_dao.get_lastest_by_key(process_definition_key, tran).await?;
 
@@ -61,10 +65,7 @@ impl RuntimeService {
 
         match procinst.process_instantce {
             None => {
-                Err(AppError::new(ErrorCode::NotFound,
-                                  Some("process instance not found"),
-                                  concat!(file!(), ":", line!()),
-                                  None))?
+                Err(AppError::new(ErrorCode::NotFound, Some("process instance not found"), concat!(file!(), ":", line!()), None))?
             },
             Some(p) => {
                 Ok(p)
@@ -95,10 +96,14 @@ mod tests {
         let var_1 = TypeWrapper::bool(true);
         operator_ctx.variables.write().unwrap().insert("approval".to_owned(), var_1);
         let rt_service = RuntimeService::new();
-        let procinst = rt_service._start_process_instance_by_key(&procdef.key,
-                                                                 Some("process_biz_key".to_owned()),
-                                                                 &mut operator_ctx,
-                                                                 &mut tran).await.unwrap();
+        let procinst = rt_service._start_process_instance_by_key(
+            &procdef.key,
+            Some("process_biz_key".to_owned()),
+            &mut operator_ctx,
+            &mut tran
+        )
+        .await
+        .unwrap();
 
         assert_eq!(procinst.proc_def_id, procdef.id);
 

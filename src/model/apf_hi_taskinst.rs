@@ -1,15 +1,14 @@
 use chrono::NaiveDateTime;
-use uuid::Uuid;
 use serde::Serialize;
 use sqlx::FromRow;
 
 #[derive(Debug, Serialize, FromRow, PartialEq, Default)]
 pub struct ApfHiTaskinst {
-    pub id: Uuid,
+    pub id: String,
     pub rev: i32,
-    pub execution_id: Uuid,
-    pub proc_inst_id: Uuid,
-    pub proc_def_id: Uuid,
+    pub execution_id: String,
+    pub proc_inst_id: String,
+    pub proc_def_id: String,
     pub element_id: Option<String>,
     pub element_name: Option<String>,
     pub element_type: Option<String>,
@@ -26,11 +25,11 @@ pub struct ApfHiTaskinst {
 
 #[derive(Debug, Default)]
 pub struct NewApfHiTaskinst {
-    pub id: Uuid,
+    pub id: String,
     pub rev: i32,
-    pub execution_id: Uuid,
-    pub proc_inst_id: Uuid,
-    pub proc_def_id: Uuid,
+    pub execution_id: String,
+    pub proc_inst_id: String,
+    pub proc_def_id: String,
     pub element_id: Option<String>,
     pub element_name: Option<String>,
     pub element_type: Option<String>,

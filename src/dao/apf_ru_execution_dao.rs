@@ -1,8 +1,7 @@
 use chrono::NaiveDateTime;
 use sqlx::{Postgres, Transaction};
-use crate::model::{ApfRuExecution, NewApfRuExecution};
+use crate::{model::{ApfRuExecution, NewApfRuExecution}, gen_id};
 use color_eyre::Result;
-use uuid::Uuid;
 use crate::error::{AppError, ErrorCode};
 
 pub struct ApfRuExecutionDao {
@@ -14,17 +13,23 @@ impl ApfRuExecutionDao {
         Self {}
     }
 
-    pub async fn create(&self, obj: &NewApfRuExecution, tran: &mut Transaction<'_, Postgres>)
-            -> Result<ApfRuExecution> {
-        let sql = "insert into apf_ru_execution \
-                (rev, proc_inst_id, business_key, parent_id, proc_def_id, root_proc_inst_id, \
-                element_id, is_active, start_time, start_user) \
-            values \
-                (1, $1, $2, $3, $4, $5, \
-                $6, $7, $8, $9) \
-            returning * ";
+    pub async fn create(&self, obj: &NewApfRuExecution, tran: &mut Transaction<'_, Postgres>) -> Result<ApfRuExecution> {
+        let sql = r#"
+            insert into apf_ru_execution (
+                rev, proc_inst_id, business_key, parent_id, proc_def_id, 
+                root_proc_inst_id, element_id, is_active, start_time, start_user,
+                id
+            ) values (
+                $1, $2, $3, $4, $5, 
+                $6, $7, $8, $9, $10,
+                $11
+            )
+            returning *
+        "#;
+        let new_id = gen_id();
 
         let rst = sqlx::query_as::<_, ApfRuExecution>(sql)
+            .bind(1)
             .bind(&obj.proc_inst_id)
             .bind(&obj.business_key)
             .bind(&obj.parent_id)
@@ -34,20 +39,22 @@ impl ApfRuExecutionDao {
             .bind(&obj.is_active)
             .bind(&obj.start_time)
             .bind(&obj.start_user)
+            .bind(new_id)
             .fetch_one(&mut *tran)
             .await?;
 
         Ok(rst)
     }
 
-    pub async fn create_proc_inst(&self, obj: &NewApfRuExecution, tran: &mut Transaction<'_, Postgres>)
-            -> Result<ApfRuExecution> {
+    pub async fn create_proc_inst(&self, obj: &NewApfRuExecution, tran: &mut Transaction<'_, Postgres>) -> Result<ApfRuExecution> {
         let proc_inst = self.create(obj, tran).await?;
 
-        let sql = "update apf_ru_execution \
-            set proc_inst_id = $1, \
-                root_proc_inst_id = $2 \
-            where id = $3";
+        let sql = r#"
+            update apf_ru_execution
+            set proc_inst_id = $1,
+                root_proc_inst_id = $2
+            where id = $3
+        "#;
 
         let r = sqlx::query(sql)
             .bind(&proc_inst.id)
@@ -57,10 +64,13 @@ impl ApfRuExecutionDao {
             .await?;
 
         if r.rows_affected() != 1 {
-            Err(AppError::new(ErrorCode::NotFound,
-                              Some(&format!("apf_ru_execution({}) is not updated", proc_inst.id)),
-                              concat!(file!(), ":", line!()),
-                              None))?
+            Err(
+                AppError::new(
+                    ErrorCode::NotFound, 
+                    Some(&format!("apf_ru_execution({}) is not updated", proc_inst.id)), 
+                    concat!(file!(), ":", line!()), None
+                )
+            )?
         }
 
         let rst = self.get_by_id(&proc_inst.id, tran).await?;
@@ -68,20 +78,24 @@ impl ApfRuExecutionDao {
         Ok(rst)
     }
 
-    pub async fn mark_begin(&self, id: &Uuid,
-                                element_id: &str,
-                                start_user: Option<String>,
-                                start_time: NaiveDateTime,
-                                tran: &mut Transaction<'_, Postgres>) -> Result<()> {
+    pub async fn mark_begin(
+        &self,
+        id: &str,
+        element_id: &str,
+        start_user: Option<String>,
+        start_time: NaiveDateTime,
+        tran: &mut Transaction<'_, Postgres>
+    ) -> Result<()> {
         let ru_exection = self.get_by_id(id, tran).await?;
 
-        let sql = "update apf_ru_execution \
-                        set element_id = $1,\
-                            start_time = $2,\
-                            start_user = $3,\
-                            rev = rev + 1 \
-                        where id = $4 \
-                          and rev = $5 ";
+        let sql = r#"
+            update apf_ru_execution 
+            set element_id = $1,
+                start_time = $2,
+                start_user = $3,
+                rev = rev + 1
+            where id = $4
+                and rev = $5"#;
         let rst = sqlx::query(sql)
             .bind(element_id)
             .bind(start_time)
@@ -92,25 +106,31 @@ impl ApfRuExecutionDao {
             .await?;
 
         if rst.rows_affected() != 1 {
-            Err(AppError::new(ErrorCode::InternalError,
-                              Some(&format!("apf_ru_execution({}) is not updated correctly, affects ({}) != 1",
-                                            ru_exection.id, rst.rows_affected())),
-                              concat!(file!(), ":", line!()),
-                              None))?
+            Err(
+                AppError::new(
+                    ErrorCode::InternalError, 
+                    Some(
+                        &format!("apf_ru_execution({}) is not updated correctly, affects ({}) != 1", ru_exection.id, rst.rows_affected())
+                    ), 
+                    concat!(file!(), ":", line!()), 
+                    None
+                )
+            )?
         }
 
         Ok(())
     }
 
-    pub async fn deactive_execution(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>)
-            -> Result<()> {
+    pub async fn deactive_execution(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<()> {
         let current_exec = self.get_by_id(id, tran).await?;
 
-        let sql = "update apf_ru_execution \
-                        set is_active = 0,\
-                            rev = $1 \
-                        where id = $2\
-                          and rev = $3";
+        let sql = r#"
+            update apf_ru_execution
+            set is_active = 0,
+                rev = $1
+            where id = $2
+                and rev = $3
+        "#;
 
         let rst = sqlx::query(sql)
             .bind(current_exec.rev + 1)
@@ -120,21 +140,27 @@ impl ApfRuExecutionDao {
             .await?;
 
         if rst.rows_affected() != 1 {
-            Err(AppError::new(ErrorCode::InternalError,
-                              Some(&format!("apf_ru_execution({}) is not updated correctly, affects ({}) != 1",
-                                            current_exec.id, rst.rows_affected())),
-                              concat!(file!(), ":", line!()),
-                              None))?
+            Err(
+                AppError::new(
+                    ErrorCode::InternalError, 
+                    Some(&format!("apf_ru_execution({}) is not updated correctly, affects ({}) != 1", current_exec.id, rst.rows_affected())), 
+                    concat!(file!(), ":", line!()), 
+                    None
+                )
+            )?
         }
 
         Ok(())
     }
 
-    pub async fn get_by_id(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>)
-            -> Result<ApfRuExecution> {
-        let sql = "select id, rev, proc_inst_id, business_key, parent_id, proc_def_id, root_proc_inst_id, \
-                element_id, is_active, start_time, start_user \
-            from apf_ru_execution where id = $1";
+    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfRuExecution> {
+        let sql = r#"
+            select id, rev, proc_inst_id, business_key, parent_id, 
+                proc_def_id, root_proc_inst_id, element_id, is_active, start_time, 
+                start_user
+            from apf_ru_execution 
+            where id = $1
+        "#;
         let rst = sqlx::query_as::<_, ApfRuExecution>(sql)
             .bind(id)
             .fetch_one(&mut *tran)
@@ -143,12 +169,14 @@ impl ApfRuExecutionDao {
         Ok(rst)
     }
 
-    pub async fn count_inactive_by_element(&self, proc_inst_id: &Uuid, element_id: &str, tran: &mut Transaction<'_, Postgres>)
-            -> Result<i64> {
-        let sql = "select count(id) from apf_ru_execution \
-                        where proc_inst_id = $1 \
-                          and element_id = $2\
-                          and is_active = 0";
+    pub async fn count_inactive_by_element(&self, proc_inst_id: &str, element_id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<i64> {
+        let sql = r#"
+            select count(id) 
+            from apf_ru_execution
+            where proc_inst_id = $1
+                and element_id = $2
+                and is_active = 0
+        "#;
         let rst = sqlx::query_scalar::<_, i64>(sql)
             .bind(proc_inst_id)
             .bind(element_id)
@@ -158,12 +186,13 @@ impl ApfRuExecutionDao {
         Ok(rst)
     }
 
-    pub async fn del_inactive_by_element(&self, proc_inst_id: &Uuid, element_id: &str, tran: &mut Transaction<'_, Postgres>)
-                                               -> Result<u64> {
-        let sql = "delete from apf_ru_execution \
-                        where proc_inst_id = $1 \
-                          and element_id = $2\
-                          and is_active = 0";
+    pub async fn del_inactive_by_element(&self, proc_inst_id: &str, element_id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<u64> {
+        let sql = r#"
+            delete from apf_ru_execution
+            where proc_inst_id = $1
+                and element_id = $2
+                and is_active = 0
+        "#;
         let rst = sqlx::query(sql)
             .bind(proc_inst_id)
             .bind(element_id)
@@ -173,9 +202,8 @@ impl ApfRuExecutionDao {
         Ok(rst.rows_affected())
     }
 
-    pub async fn delete(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>) -> Result<u64> {
-        let sql = "delete from apf_ru_execution \
-                         where id = $1 ";
+    pub async fn delete(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<u64> {
+        let sql = "delete from apf_ru_execution where id = $1 ";
         let rst = sqlx::query(sql)
             .bind(id)
             .execute(&mut *tran)
@@ -202,8 +230,8 @@ pub mod tests {
 
         let procdef = create_test_deploy("bpmn/process1.bpmn.xml", &mut tran).await;
         let proc_inst = create_test_procinst(&procdef, &mut tran).await;
-        assert_eq!(proc_inst.id, proc_inst.proc_inst_id.unwrap());
-        assert_eq!(proc_inst.id, proc_inst.root_proc_inst_id.unwrap());
+        assert_eq!(proc_inst.id, proc_inst.proc_inst_id.clone().unwrap());
+        assert_eq!(proc_inst.id, proc_inst.root_proc_inst_id.clone().unwrap());
         assert_eq!(proc_inst.parent_id, None);
         assert_eq!(proc_inst.is_active, 1);
 

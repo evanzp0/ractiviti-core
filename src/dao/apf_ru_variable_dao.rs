@@ -1,7 +1,7 @@
 use color_eyre::Result;
 use sqlx::{Error, Postgres, Transaction};
-use uuid::Uuid;
 use crate::error::{AppError, ErrorCode};
+use crate::gen_id;
 use crate::model::{ApfRuVariable, ApfRuVariableDto};
 
 pub struct ApfRuVariableDao {
@@ -13,30 +13,36 @@ impl ApfRuVariableDao {
         Self {}
     }
 
-    pub async fn create(&self, obj: &ApfRuVariableDto, tran: &mut Transaction<'_, Postgres>)
-                            -> Result<ApfRuVariable> {
-        let sql = "insert into apf_ru_variable \
-                (rev, var_type, name, value, proc_inst_id, execution_id, task_id) \
-            values \
-                (1, $1, $2, $3, $4, $5, $6) \
-            returning * ";
+    pub async fn create(&self, obj: &ApfRuVariableDto, tran: &mut Transaction<'_, Postgres>) -> Result<ApfRuVariable> {
+        let sql = r#"
+            insert into apf_ru_variable (
+                rev, var_type, name, value, proc_inst_id, 
+                execution_id, task_id, id
+            ) values (
+                $1, $2, $3, $4, $5, 
+                $6, $7, $8
+            )
+            returning *
+        "#;
+        let new_id = gen_id();
 
         let rst = sqlx::query_as::<_, ApfRuVariable>(sql)
+            .bind(1)
             .bind(&obj.var_type)
             .bind(&obj.name)
             .bind(&obj.value)
             .bind(&obj.proc_inst_id)
             .bind(&obj.execution_id)
             .bind(&obj.task_id)
+            .bind(new_id)
             .fetch_one(&mut *tran)
             .await?;
 
         Ok(rst)
     }
 
-    pub async fn create_or_update(&self, obj: &ApfRuVariableDto, tran: &mut Transaction<'_, Postgres>)
-                                      -> Result<ApfRuVariable> {
-        let mut var_id = Uuid::default();
+    pub async fn create_or_update(&self, obj: &ApfRuVariableDto, tran: &mut Transaction<'_, Postgres>) -> Result<ApfRuVariable> {
+        let mut var_id = "".to_owned();
         let mut rst_variable = self.get_by_proc_inst(&obj.proc_inst_id, &obj.name, tran).await;
         match &mut rst_variable {
             Ok(variable) => {
@@ -48,7 +54,7 @@ impl ApfRuVariableDao {
                 variable.task_id = obj.task_id.clone();
 
                 self.update(&variable, tran).await?;
-                var_id = variable.id;
+                var_id = variable.id.clone();
             },
             Err(error) => {
                 // ptln!(error.is::<Error>());
@@ -70,15 +76,17 @@ impl ApfRuVariableDao {
 
     pub async fn update(&self, obj: &ApfRuVariable, tran: &mut Transaction<'_, Postgres>)
                             -> Result<()> {
-        let sql = "update apf_ru_variable \
-                        set rev = rev + 1, \
-                            var_type = $1, \
-                            name = $2, \
-                            value = $3, \
-                            execution_id = $4, \
-                            task_id = $5 \
-                        where id = $6 \
-                          and rev = $7";
+        let sql = r#"
+            update apf_ru_variable
+            set rev = rev + 1,
+                var_type = $1,
+                name = $2,
+                value = $3,
+                execution_id = $4,
+                task_id = $5
+            where id = $6
+                and rev = $7
+        "#;
 
         let rst = sqlx::query(sql)
             .bind(&obj.var_type)
@@ -92,21 +100,26 @@ impl ApfRuVariableDao {
             .await?;
 
         if rst.rows_affected() != 1 {
-            Err(AppError::new(ErrorCode::InternalError,
-                              Some(&format!("apf_ru_variable({}) is not updated correctly, affects ({}) != 1",
-                                            obj.id, rst.rows_affected())),
-                              concat!(file!(), ":", line!()),
-                              None))?
+            Err(
+                AppError::new(
+                    ErrorCode::InternalError, 
+                    Some(&format!("apf_ru_variable({}) is not updated correctly, affects ({}) != 1", obj.id, rst.rows_affected())), 
+                    concat!(file!(), ":", line!()), 
+                    None
+                )
+            )?
         }
 
         Ok(())
     }
 
-    pub async fn get_by_id(&self, id: &Uuid, tran: &mut Transaction<'_, Postgres>)
-                               -> Result<ApfRuVariable> {
-        let sql = "select id, rev, var_type, name, value, proc_inst_id, execution_id, task_id \
-                        from apf_ru_variable \
-                        where id = $1";
+    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfRuVariable> {
+        let sql = r#"
+            select id, rev, var_type, name, value, 
+                proc_inst_id, execution_id, task_id 
+            from apf_ru_variable
+            where id = $1
+        "#;
 
         let rst = sqlx::query_as::<_, ApfRuVariable>(sql)
             .bind(id)
@@ -116,13 +129,14 @@ impl ApfRuVariableDao {
         Ok(rst)
     }
 
-    pub async fn get_by_proc_inst(&self, proc_inst_id: &Uuid, name: &str,
-                                      tran: &mut Transaction<'_, Postgres>)
-                               -> Result<ApfRuVariable> {
-        let sql = "select id, rev, var_type, name, value, proc_inst_id, execution_id, task_id \
-                        from apf_ru_variable \
-                        where proc_inst_id = $1 \
-                          and name = $2";
+    pub async fn get_by_proc_inst(&self, proc_inst_id: &str, name: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfRuVariable> {
+        let sql = r#"
+            select id, rev, var_type, name, value, 
+                proc_inst_id, execution_id, task_id 
+            from apf_ru_variable 
+            where proc_inst_id = $1 
+                and name = $2
+        "#;
 
         let rst = sqlx::query_as::<_, ApfRuVariable>(sql)
             .bind(proc_inst_id)
@@ -133,12 +147,13 @@ impl ApfRuVariableDao {
         Ok(rst)
     }
 
-    pub async fn find_all_by_proc_inst(&self, proc_inst_id: &Uuid,
-                                      tran: &mut Transaction<'_, Postgres>)
-                                      -> Result<Vec<ApfRuVariable>> {
-        let sql = "select id, rev, var_type, name, value, proc_inst_id, execution_id, task_id \
-                        from apf_ru_variable \
-                        where proc_inst_id = $1";
+    pub async fn find_all_by_proc_inst(&self, proc_inst_id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<Vec<ApfRuVariable>> {
+        let sql = r#"
+            select id, rev, var_type, name, value, 
+                proc_inst_id, execution_id, task_id
+            from apf_ru_variable
+            where proc_inst_id = $1
+        "#;
 
         let rst = sqlx::query_as::<_, ApfRuVariable>(sql)
             .bind(proc_inst_id)
@@ -148,10 +163,8 @@ impl ApfRuVariableDao {
         Ok(rst)
     }
 
-    pub async fn delete_by_proc_inst_id(&self, proc_inst_id: &Uuid, tran: &mut Transaction<'_, Postgres>)
-                                       -> Result<u64> {
-        let sql = "delete from apf_ru_variable \
-                        where proc_inst_id = $1";
+    pub async fn delete_by_proc_inst_id(&self, proc_inst_id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<u64> {
+        let sql = r#"delete from apf_ru_variable where proc_inst_id = $1"#;
         let rst = sqlx::query(sql)
             .bind(proc_inst_id)
             .execute(&mut *tran)
@@ -235,7 +248,7 @@ pub mod tests {
             var_type: VarType::STRING,
             name: "approval".to_string(),
             value: "true".to_string(),
-            proc_inst_id: task.proc_inst_id,
+            proc_inst_id: task.proc_inst_id.clone(),
             execution_id: Some(task.execution_id.clone()),
             task_id: Some(task.id.clone()),
         };

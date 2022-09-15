@@ -1,5 +1,4 @@
 use chrono::NaiveDateTime;
-use uuid::Uuid;
 use validator::Validate;
 use serde::{Serialize, Deserialize};
 use sqlx::FromRow;
@@ -9,7 +8,7 @@ use crate::error::AppError;
 
 #[derive(Debug, Serialize, FromRow, PartialOrd, PartialEq, Default)]
 pub struct ApfReDeployment {
-    pub id: Uuid,
+    pub id: String,
     pub name: String,
     pub key: Option<String>,
     pub organization: Option<String>,
