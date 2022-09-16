@@ -44,7 +44,7 @@ impl ApfGeBytearrayDao {
         let sql = r#"
             insert into apf_ge_bytearray (id, name, deployment_id, bytes)
             values ($1, $2, $3, $4)
-            returning *
+            returning id, name, deployment_id
         "#;
         let new_id = gen_id();
 

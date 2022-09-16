@@ -7,6 +7,11 @@ database:
   url: postgres://root:111111@127.0.0.1:5432/ractiviti
   min: 0
   max: 15
+  # host: 127.0.0.1
+  # port: 5432
+  # user: root
+  # password: 111111
+  # dbname: ractiviti
 log:
   file: data/logs/ractiviti.log
   level: debug
