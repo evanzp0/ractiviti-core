@@ -1,17 +1,33 @@
-use sqlx::{Postgres, Transaction};
 use color_eyre::Result;
-use crate::{model::{ApfReDeployment, NewApfReDeployment}, gen_id};
+use tokio_pg_mapper::FromTokioPostgresRow;
 use validator::Validate;
+use tokio_postgres::Transaction;
 
-pub struct ApfReDeploymentDao {}
+use crate::{model::{ApfReDeployment, NewApfReDeployment}, gen_id};
+use super::base_dao::{BaseDao, Dao};
 
-impl ApfReDeploymentDao {
+pub struct ApfReDeploymentDao<'a> {
+    base_dao: BaseDao<'a>
+}
 
-    pub fn new() -> Self {
-        Self {}
+impl<'a> Dao<'a> for ApfReDeploymentDao<'a> {
+
+    fn new(tran: &'a Transaction<'a>) -> Self {
+        let base_dao = BaseDao::new(tran);
+
+        Self {
+            base_dao
+        }
     }
 
-    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>)
+    fn tran(&self) -> &Transaction {
+        self.base_dao.tran()
+    }
+}
+
+impl<'a> ApfReDeploymentDao<'a> {
+
+    pub async fn get_by_id(&self, id: &str)
             -> Result<ApfReDeployment> {
         let sql = r#"
             select id, name, key, organization, deployer, deploy_time 
@@ -19,16 +35,14 @@ impl ApfReDeploymentDao {
             where id = $1
         "#;
 
-        let rst = sqlx::query_as::<_, ApfReDeployment>(sql)
-            .bind(&id)
-            .fetch_one(&mut *tran)
-            .await?;
+        let stmt = self.tran().prepare(sql).await?;
+        let row = self.tran().query_one(&stmt, &[&id]).await?;
+        let rst = ApfReDeployment::from_row(row)?;
 
         Ok(rst)
     }
 
-    pub async fn create(&self, obj: &NewApfReDeployment, tran: &mut Transaction<'_, Postgres>)
-                -> Result<ApfReDeployment> {
+    pub async fn create(&self, obj: &NewApfReDeployment) -> Result<ApfReDeployment> {
         obj.validate()?;
         let sql = r#"insert into apf_re_deployment (
                 id, name, key, organization, deployer
@@ -38,15 +52,20 @@ impl ApfReDeploymentDao {
             returning *
         "#;
         let new_id = gen_id();
+        let stmt = self.tran().prepare(sql).await?;
+        let row = self.tran().query_one(
+            &stmt, 
+            &[
+                &new_id,
+                &obj.name,
+                &obj.key,
+                &obj.organization,
+                &obj.deployer
+            ]
+        )
+        .await?;
 
-        let rst = sqlx::query_as::<_, ApfReDeployment>(sql)
-            .bind(new_id)
-            .bind(&obj.name)
-            .bind(&obj.key)
-            .bind(&obj.organization)
-            .bind(&obj.deployer)
-            .fetch_one(&mut *tran)
-            .await?;
+        let rst = ApfReDeployment::from_row(row)?;
 
         Ok(rst)
     }
@@ -55,7 +74,6 @@ impl ApfReDeploymentDao {
 #[cfg(test)]
 mod tests {
     use log4rs::debug;
-    use sqlx::Connection;
     use crate::boot::db;
     use crate::model::NewApfGeBytearray;
     use super::*;
@@ -63,9 +81,9 @@ mod tests {
     #[tokio::test]
     async fn test_create_and_get_by_id() {
         let mut conn =  db::get_connect().await.unwrap();
-        let mut tran = conn.begin().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
 
-        let rst = create_test_deployment(&mut tran).await;
+        let rst = create_test_deployment(&tran).await;
 
         if let Err(e) = rst {
             tran.rollback().await.unwrap();
@@ -73,8 +91,8 @@ mod tests {
         }
 
         let deployment1 = rst.unwrap();
-        let dao = ApfReDeploymentDao::new();
-        let deployment2 = dao.get_by_id(&deployment1.id, &mut tran).await.unwrap();
+        let dao = ApfReDeploymentDao::new(&tran);
+        let deployment2 = dao.get_by_id(&deployment1.id).await.unwrap();
         assert_eq!(deployment1, deployment2);
 
         debug!("{:?}", deployment2);
@@ -82,7 +100,7 @@ mod tests {
         tran.rollback().await.unwrap();
     }
 
-    async fn create_test_deployment(tran: &mut Transaction<'_, Postgres>)
+    async fn create_test_deployment(tran: &Transaction<'_>)
             -> Result<ApfReDeployment> {
         let obj = NewApfReDeployment {
             name: Some("test1".to_string()),
@@ -92,8 +110,8 @@ mod tests {
             new_bytearray: NewApfGeBytearray::new()
         };
 
-        let dao = ApfReDeploymentDao::new();
-        let rst = dao.create(&obj, tran).await?;
+        let dao = ApfReDeploymentDao::new(tran);
+        let rst = dao.create(&obj).await?;
 
         Ok(rst)
     }

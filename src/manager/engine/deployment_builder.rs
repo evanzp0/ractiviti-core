@@ -2,11 +2,11 @@ use std::fs::File;
 use std::io::BufRead;
 
 use color_eyre::Result;
+use tokio_postgres::Transaction;
 use std::io::BufReader;
-use sqlx::{Acquire, Postgres, Transaction};
 
 use crate::boot::db;
-use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao, ApfReProcdefDao};
+use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao, ApfReProcdefDao, Dao};
 use crate::error::{AppError, ErrorCode};
 use crate::manager::engine::BpmnManager;
 use crate::model::{ApfReDeployment, NewApfGeBytearray, NewApfReDeployment, NewApfReProcdef, SuspensionState};
@@ -58,16 +58,16 @@ impl DeploymentBuilder {
 
     pub async fn deply<'a>(&mut self) -> Result<ApfReDeployment> {
         let mut conn = db::get_connect().await?;
-        let mut tran = conn.begin().await?;
+        let tran = conn.transaction().await?;
 
-        let deployment = self._deploy(&mut tran).await?;
+        let deployment = self._deploy(&tran).await?;
 
         tran.commit().await?;
 
         Ok(deployment)
     }
 
-    pub async fn _deploy<'a>(&mut self, tran: &mut Transaction<'a, Postgres>) -> Result<ApfReDeployment> {
+    pub async fn _deploy<'a>(&mut self, tran: &'a Transaction<'a>) -> Result<ApfReDeployment> {
         let bpmn_xml = String::from_utf8(self.new_deployment.new_bytearray.bytes.clone()
                 .unwrap_or(Vec::new()))?;
 
@@ -76,13 +76,14 @@ impl DeploymentBuilder {
         let bpmn_proc = &bpmn_def.process;
 
         // create deployment
-        let deployment_dao = ApfReDeploymentDao::new();
-        let deployment = deployment_dao.create(&self.new_deployment, tran).await?;
+        let deployment_dao = ApfReDeploymentDao::new(tran);
+        let deployment = deployment_dao.create(&self.new_deployment).await?;
 
         // create bytearray
         self.new_deployment.new_bytearray.deployment_id = Some(deployment.id.clone());
-        let bytearray_dao = ApfGeBytearrayDao::new();
-        let _bytearray = bytearray_dao.create(&self.new_deployment.new_bytearray, tran).await?;
+        let bytearray_dao = ApfGeBytearrayDao::new(tran);
+
+        let _bytearray = bytearray_dao.create(&self.new_deployment.new_bytearray).await?;
 
         // create proc_def
         let new_procdef = NewApfReProcdef {
@@ -94,8 +95,9 @@ impl DeploymentBuilder {
             description: bpmn_proc.description.clone(),
         };
 
-        let procdef_dao = ApfReProcdefDao::new();
-        let _procdef = procdef_dao.create(&new_procdef, tran).await?;
+        let procdef_dao = ApfReProcdefDao::new(tran);
+        
+        let _procdef = procdef_dao.create(&new_procdef).await?;
 
         Ok(deployment)
     }
@@ -104,7 +106,6 @@ impl DeploymentBuilder {
 
 #[cfg(test)]
 pub mod tests {
-    use sqlx::Acquire;
     use crate::boot::db;
     use crate::model::ApfReProcdef;
     use super::*;
@@ -112,12 +113,12 @@ pub mod tests {
     #[tokio::test]
     async fn test_deploy() {
         let mut conn = db::get_connect().await.unwrap();
-        let mut tran = conn.begin().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
 
-        create_test_deploy("bpmn/process1.bpmn.xml", &mut tran).await;
+        create_test_deploy("bpmn/process1.bpmn.xml", &tran).await;
     }
 
-    pub async fn create_test_deploy<'a>(file: &str, tran: &mut Transaction<'a, Postgres>) -> ApfReProcdef {
+    pub async fn create_test_deploy<'a>(file: &str, tran: &'a Transaction<'a>) -> ApfReProcdef {
         let builder = DeploymentBuilder::new();
         let deployment = builder.add_file(file).unwrap()
             .name("test_deploy").unwrap()
@@ -126,8 +127,8 @@ pub mod tests {
             .await
             .unwrap();
 
-        let procdef_dao = ApfReProcdefDao::new();
-        let procdef = procdef_dao.get_by_deplyment_id(&deployment.id, tran)
+        let procdef_dao = ApfReProcdefDao::new(tran);
+        let procdef = procdef_dao.get_by_deplyment_id(&deployment.id)
             .await
             .unwrap();
 

@@ -1,10 +1,12 @@
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use sqlx::FromRow;
 use crate::error::AppError;
 use color_eyre::Result;
+use tokio_pg_mapper_derive::PostgresMapper;
 
-#[derive(Debug, Serialize, FromRow, PartialEq, Default)]
+#[derive(PostgresMapper)]
+#[pg_mapper(table="apf_re_deployment")]
+#[derive(Debug, Serialize, PartialEq, Default)]
 pub struct ApfRuTask {
     pub id: String,
     pub rev: i32,

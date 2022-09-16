@@ -1,8 +1,10 @@
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use sqlx::FromRow;
+use tokio_pg_mapper_derive::PostgresMapper;
 
-#[derive(Debug, Serialize, FromRow, PartialEq, Default)]
+#[derive(PostgresMapper)]
+#[pg_mapper(table="apf_re_deployment")]
+#[derive(Debug, Serialize, PartialEq, Default)]
 pub struct ApfHiActinst {
     pub id: String,
     pub rev: i32,

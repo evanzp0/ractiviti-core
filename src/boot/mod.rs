@@ -22,14 +22,12 @@ pub struct Server {
 
 #[derive(Debug, Deserialize)]
 pub struct Database {
-    pub url: String,
-    pub min: u32,
-    pub max: u32,
-    // pub host: Option<String>,
-    // pub port: Option<String>,
-    // pub user: Option<String>,
-    // pub password: Option<String>,
-    // pub dbname: Option<String>,
+    pub max: Option<usize>,
+    pub host: Option<String>,
+    pub port: Option<u16>,
+    pub user: Option<String>,
+    pub password: Option<String>,
+    pub dbname: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

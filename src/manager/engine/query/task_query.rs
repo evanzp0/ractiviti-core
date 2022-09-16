@@ -4,7 +4,7 @@ use color_eyre::Result;
 use rstring_builder::StringBuilder;
 use sqlx::{Postgres, Transaction};
 
-use crate::dao::{ApfRuTaskDao, BaseDao, SqlFragment as SF};
+use crate::dao::{ApfRuTaskDao, CrieriaDao, SqlFragment as SF};
 use crate::model::ApfRuTask;
 
 #[derive(Debug, Default)]
@@ -81,7 +81,7 @@ impl TaskQuery {
         let mut params: Vec<Box<dyn Any>> = Vec::new();
         let sql= self.build_sql(&mut params);
 
-        let rst = BaseDao::find_by_crieria(&sql, &params, tran).await?;
+        let rst = CrieriaDao::find_by_crieria(&sql, &params, tran).await?;
 
         Ok(rst)
     }
@@ -91,7 +91,7 @@ impl TaskQuery {
         let sql= self.build_sql(&mut params);
 
         let ru_task_dao = ApfRuTaskDao::new();
-        let rst = BaseDao::fetch_one_by_crieria(&sql, &params, tran).await?;
+        let rst = CrieriaDao::fetch_one_by_crieria(&sql, &params, tran).await?;
 
         Ok(rst)
     }
@@ -101,7 +101,7 @@ impl TaskQuery {
         let sql= self.build_sql(&mut params);
 
         let ru_task_dao = ApfRuTaskDao::new();
-        let rst = BaseDao::fetch_scalar_by_crieria(&sql, &params, tran).await?;
+        let rst = CrieriaDao::fetch_scalar_by_crieria(&sql, &params, tran).await?;
 
         Ok(rst)
     }
@@ -151,7 +151,7 @@ impl TaskQuery {
 
         if let Some(v) = &self.candidate_group {
             idx += 1;
-            let param_in_str = BaseDao::split_params(v);
+            let param_in_str = CrieriaDao::split_params(v);
 
             sql_builder.append(SF::AND(format!("t3.group_id in (${})", idx)));
             params.push(Box::new(param_in_str));

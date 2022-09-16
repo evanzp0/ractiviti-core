@@ -86,7 +86,7 @@ impl AppError {
 impl Display for AppError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "err_code: {}, msg: {}, location: {}, cause: {:?}",
-               self.code.int_value(), self.msg, self.location, self.child_err)
+            self.code.int_value(), self.msg, self.location, self.child_err)
     }
 }
 
@@ -108,14 +108,10 @@ mod tests {
 
     #[test]
     fn test_some_error() {
-        let err1 = AppError::new(ErrorCode::InternalError, None,
-                                 concat!(file!(), ":", line!()),
-                                 None);
+        let err1 = AppError::new(ErrorCode::InternalError, None, concat!(file!(), ":", line!()), None);
         assert_eq!(err1.msg, "Inernal error");
 
-        let err2 = AppError::new(ErrorCode::InternalError, None,
-                                 concat!(file!(), ":", line!()),
-                                 Some(Box::new(err1)));
+        let err2 = AppError::new(ErrorCode::InternalError, None, concat!(file!(), ":", line!()), Some(Box::new(err1)));
         debug!(err2);
         debug!(serde_json::to_string(&err2));
     }

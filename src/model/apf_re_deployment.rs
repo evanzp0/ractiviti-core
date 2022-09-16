@@ -1,12 +1,15 @@
 use chrono::NaiveDateTime;
+use tokio_pg_mapper_derive::PostgresMapper;
 use validator::Validate;
 use serde::{Serialize, Deserialize};
-use sqlx::FromRow;
-use super::NewApfGeBytearray;
 use color_eyre::Result;
-use crate::error::AppError;
 
-#[derive(Debug, Serialize, FromRow, PartialOrd, PartialEq, Default)]
+use crate::error::AppError;
+use super::NewApfGeBytearray;
+
+#[derive(Debug, Serialize, PartialOrd, PartialEq, Default)]
+#[derive(PostgresMapper)]
+#[pg_mapper(table = "apf_re_deployment")]
 pub struct ApfReDeployment {
     pub id: String,
     pub name: String,

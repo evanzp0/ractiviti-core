@@ -84,7 +84,7 @@ pub mod tests {
     use crate::model::ApfRuExecution;
     use super::*;
     use std::any::Any;
-    use crate::dao::BaseDao;
+    use crate::dao::CrieriaDao;
 
     #[tokio::test]
     async fn test_create_and_delete_hi_actinst() {
@@ -108,16 +108,16 @@ pub mod tests {
             Box::new(task.element_id.clone()),
             Box::new(Some(task.suspension_state.clone()))
         ];
-        let rst = BaseDao::find_by_crieria::<ApfRuTask>(sql, &params, &mut tran).await.unwrap();
+        let rst = CrieriaDao::find_by_crieria::<ApfRuTask>(sql, &params, &mut tran).await.unwrap();
         assert_eq!(rst.len(), 1);
 
         // test fetch one by crieria
-        let rst = BaseDao::fetch_one_by_crieria::<ApfRuTask>(sql, &params, &mut tran).await.unwrap();
+        let rst = CrieriaDao::fetch_one_by_crieria::<ApfRuTask>(sql, &params, &mut tran).await.unwrap();
         assert_eq!(rst.id, task.id.clone());
 
         // test count
         let sql = "select count(*) from apf_ru_task where id = $1 and element_id = $2 and suspension_state = $3";
-        let rst = BaseDao::fetch_scalar_by_crieria(sql, &params, &mut tran).await.unwrap();
+        let rst = CrieriaDao::fetch_scalar_by_crieria(sql, &params, &mut tran).await.unwrap();
         assert_eq!(rst, 1);
 
         // delete

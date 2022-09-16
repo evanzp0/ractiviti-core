@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use serde::Serialize;
-use sqlx::FromRow;
+use tokio_pg_mapper_derive::PostgresMapper;
 
 use crate::manager::engine::TypeWrapper;
 use super::VarType;
 
-#[derive(Debug, Serialize, FromRow, PartialEq, Default, Clone)]
+#[derive(PostgresMapper)]
+#[pg_mapper(table="apf_re_deployment")]
+#[derive(Debug, Serialize, PartialEq, Default, Clone)]
 pub struct ApfRuVariable {
     pub id: String,
     pub rev: i32,

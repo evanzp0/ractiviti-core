@@ -1,11 +1,12 @@
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use sqlx::FromRow;
 use color_eyre::Result;
-
 use crate::error::{AppError, ErrorCode};
+use tokio_pg_mapper_derive::PostgresMapper;
 
-#[derive(Debug, Serialize, FromRow, PartialEq, Clone, Default)]
+#[derive(PostgresMapper)]
+#[pg_mapper(table="apf_re_deployment")]
+#[derive(Debug, Serialize, PartialEq, Clone, Default)]
 pub struct ApfRuExecution {
     pub id: String,
     pub rev: i32,

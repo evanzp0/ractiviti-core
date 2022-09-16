@@ -60,7 +60,7 @@ struct DaoB<'a> {
 }
 
 impl<'a> DaoA<'a> {
-    pub fn new(tran: &'a Transaction<'a>) -> Self {
+    pub fn new(tran: &'a Transaction) -> Self {
         Self {
             tran
         }
