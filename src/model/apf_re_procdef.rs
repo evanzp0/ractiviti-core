@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use tokio_pg_mapper_derive::PostgresMapper;
 
 #[derive(PostgresMapper)]
-#[pg_mapper(table="apf_re_deployment")]
+#[pg_mapper(table="apf_re_procdef")]
 #[derive(Debug, Serialize, PartialEq, Default)]
 pub struct ApfReProcdef {
     pub id: String,

@@ -3,7 +3,7 @@ use validator::Validate;
 use tokio_pg_mapper_derive::PostgresMapper;
 
 #[derive(PostgresMapper)]
-#[pg_mapper(table="apf_re_deployment")]
+#[pg_mapper(table="apf_ge_bytearray")]
 #[derive(Debug, Serialize, PartialEq, Default)]
 pub struct ApfGeBytearray {
     pub id: String,

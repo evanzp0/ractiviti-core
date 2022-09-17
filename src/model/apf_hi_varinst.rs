@@ -4,7 +4,7 @@ use super::VarType;
 use tokio_pg_mapper_derive::PostgresMapper;
 
 #[derive(PostgresMapper)]
-#[pg_mapper(table="apf_re_deployment")]
+#[pg_mapper(table="apf_hi_varinst")]
 #[derive(Debug, Serialize, PartialEq, Default, Clone)]
 pub struct ApfHiVarinst {
     pub id: String,

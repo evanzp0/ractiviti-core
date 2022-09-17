@@ -5,7 +5,7 @@ use color_eyre::Result;
 use tokio_pg_mapper_derive::PostgresMapper;
 
 #[derive(PostgresMapper)]
-#[pg_mapper(table="apf_re_deployment")]
+#[pg_mapper(table="apf_ru_task")]
 #[derive(Debug, Serialize, PartialEq, Default)]
 pub struct ApfRuTask {
     pub id: String,

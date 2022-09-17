@@ -6,7 +6,8 @@ pub mod apf_hi_procinst;
 pub mod apf_ru_task;
 pub mod apf_hi_actinst;
 pub mod apf_hi_taskinst;
-// pub mod apf_ru_identitylink;
+pub mod apf_ru_identitylink;
+pub mod ident_type;
 // pub mod apf_hi_identitylink;
 // pub mod apf_ru_variable;
 // pub mod apf_hi_varinst;
@@ -19,36 +20,16 @@ pub use apf_hi_procinst::*;
 pub use apf_ru_task::*;
 pub use apf_hi_actinst::*;
 pub use apf_hi_taskinst::*;
-// pub use apf_ru_identitylink::*;
+pub use apf_ru_identitylink::*;
+pub use ident_type::*;
 // pub use apf_hi_identitylink::*;
 // pub use apf_ru_variable::*;
 // pub use apf_hi_varinst::*;
 
-
-use serde::Serialize;
-use std::fmt::{Display, Formatter};
+// use serde::Serialize;
+// use std::fmt::{Display, Formatter};
 // use crate::manager::engine::TypeWrapper;
 
-#[allow(non_camel_case_types)]
-#[derive(Debug, Serialize, PartialEq, Clone)]
-// #[derive(sqlx::Type)]
-// #[sqlx(type_name = "varchar")]
-pub enum IdentType {
-    user,
-    group,
-}
-
-impl Display for IdentType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl Default for IdentType {
-    fn default() -> Self {
-        IdentType::user
-    }
-}
 
 // #[allow(non_camel_case_types)]
 // #[derive(Debug, Serialize, PartialEq, Clone)]

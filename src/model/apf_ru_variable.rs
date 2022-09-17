@@ -6,7 +6,7 @@ use crate::manager::engine::TypeWrapper;
 use super::VarType;
 
 #[derive(PostgresMapper)]
-#[pg_mapper(table="apf_re_deployment")]
+#[pg_mapper(table="apf_ru_variable")]
 #[derive(Debug, Serialize, PartialEq, Default, Clone)]
 pub struct ApfRuVariable {
     pub id: String,

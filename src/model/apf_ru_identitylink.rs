@@ -1,10 +1,11 @@
 use serde::Serialize;
-use super::IdentType;
 use tokio_pg_mapper_derive::PostgresMapper;
 
-#[derive(PostgresMapper)]
-#[pg_mapper(table="apf_re_deployment")]
+use super::IdentType;
+
 #[derive(Debug, Serialize, PartialEq, Default, Clone)]
+#[derive(PostgresMapper)]
+#[pg_mapper(table="apf_ru_identitylink")]
 pub struct ApfRuIdentitylink {
     pub id: String,
     pub rev: i32,

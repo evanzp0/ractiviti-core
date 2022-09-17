@@ -5,7 +5,7 @@ use crate::error::{AppError, ErrorCode};
 use tokio_pg_mapper_derive::PostgresMapper;
 
 #[derive(PostgresMapper)]
-#[pg_mapper(table="apf_re_deployment")]
+#[pg_mapper(table="apf_ru_execution")]
 #[derive(Debug, Serialize, PartialEq, Clone, Default)]
 pub struct ApfRuExecution {
     pub id: String,
