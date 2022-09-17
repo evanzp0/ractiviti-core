@@ -110,21 +110,23 @@ impl<'a> ApfReProcdefDao<'a> {
         let new_id = gen_id();
         let rev: i32 = 1;
         let stmt = self.tran().prepare(sql).await?;
-        let row = self.tran().query_one(
-            &stmt, 
-            &[
-                &obj.name,
-                &rev,
-                &obj.key,
-                &version,
-                &obj.deployment_id,
-                &obj.resource_name,
-                &obj.description,
-                &obj.suspension_state,
-                &new_id,
-            ]
-        )
-        .await?;
+        let row = self
+            .tran()
+            .query_one(
+                &stmt, 
+                &[
+                    &obj.name,
+                    &rev,
+                    &obj.key,
+                    &version,
+                    &obj.deployment_id,
+                    &obj.resource_name,
+                    &obj.description,
+                    &obj.suspension_state,
+                    &new_id,
+                ]
+            )
+            .await?;
         let rst = ApfReProcdef::from_row(row)?;
         
         Ok(rst)

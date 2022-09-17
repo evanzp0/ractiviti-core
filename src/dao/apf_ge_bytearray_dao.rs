@@ -59,16 +59,18 @@ impl<'a> ApfGeBytearrayDao<'a> {
         let new_id = gen_id();
 
         let stmt = self.tran().prepare(sql).await?;
-        let row = self.tran().query_one(
-            &stmt, 
-            &[
-                &new_id,
-                &obj.name,
-                &obj.deployment_id,
-                &obj.bytes
-            ]
-        )
-        .await?;
+        let row = self
+            .tran()
+            .query_one(
+                &stmt, 
+                &[
+                    &new_id,
+                    &obj.name,
+                    &obj.deployment_id,
+                    &obj.bytes
+                ]
+            )
+            .await?;
 
         let rst = ApfGeBytearray::from_row(row)?;
 

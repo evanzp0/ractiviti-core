@@ -1,21 +1,33 @@
 use chrono::NaiveDateTime;
-use sqlx::{Postgres, Transaction};
 use color_eyre::Result;
+use tokio_pg_mapper::FromTokioPostgresRow;
+use tokio_postgres::Transaction;
 
 use crate::error::{AppError, ErrorCode};
 use crate::gen_id;
 use crate::model::{ApfHiActinst, NewApfHiActinst};
 
-pub struct ApfHiActinstDao {
-    
+use super::{BaseDao, Dao};
+
+pub struct ApfHiActinstDao<'a> {
+    base_dao: BaseDao<'a>
 }
 
-impl ApfHiActinstDao {
-    pub fn new() -> Self {
-        Self {}
+impl<'a> Dao<'a> for ApfHiActinstDao<'a> {
+    fn new(tran: &'a Transaction<'a>) -> Self {
+        Self {
+            base_dao: BaseDao::new(tran)
+        }
     }
 
-    pub async fn create(&self, obj: &NewApfHiActinst, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiActinst> {
+    fn tran(&self) -> &Transaction {
+        self.base_dao.tran()
+    }
+}
+
+impl<'a> ApfHiActinstDao<'a> {
+
+    pub async fn create(&self, obj: &NewApfHiActinst) -> Result<ApfHiActinst> {
         let sql = r#"
             insert into apf_hi_actinst (
                 rev, proc_def_id, proc_inst_id, execution_id, task_id, 
@@ -29,36 +41,36 @@ impl ApfHiActinstDao {
             returning *
         "#;
         let new_id = gen_id();
-        
-        let rst = sqlx::query_as::<_, ApfHiActinst>(sql)
-            .bind(&obj.rev)
-            .bind(&obj.proc_def_id)
-            .bind(&obj.proc_inst_id)
-            .bind(&obj.execution_id)
-            .bind(&obj.task_id)
-            .bind(&obj.element_id)
-            .bind(&obj.element_name)
-            .bind(&obj.element_type)
-            .bind(&obj.start_user_id)
-            .bind(&obj.start_time)
-            .bind(&obj.end_time)
-            .bind(&obj.duration)
-            .bind(&new_id)
-            .fetch_one(&mut *tran)
+
+        let stmt = self.tran().prepare(sql).await?;
+        let row = self
+            .tran()
+            .query_one(
+                &stmt, 
+                &[
+                    &obj.rev,
+                    &obj.proc_def_id,
+                    &obj.proc_inst_id,
+                    &obj.execution_id,
+                    &obj.task_id,
+                    &obj.element_id,
+                    &obj.element_name,
+                    &obj.element_type,
+                    &obj.start_user_id,
+                    &obj.start_time,
+                    &obj.end_time,
+                    &obj.duration,
+                    &new_id
+                ]
+            )
             .await?;
+        let rst = ApfHiActinst::from_row(row)?;
 
         Ok(rst)
     }
 
-    pub async fn mark_end(
-        &self, 
-        execution_id: &str, 
-        element_id: &str,
-        end_time: NaiveDateTime, 
-        end_user_id: Option<String>,
-        tran: &mut Transaction<'_, Postgres>
-    ) -> Result<()> {
-        let hi_actinst = self.find_one_by_element_id(execution_id, element_id, tran).await?;
+    pub async fn mark_end( &self, execution_id: &str, element_id: &str,end_time: NaiveDateTime, end_user_id: Option<String>) -> Result<()> {
+        let hi_actinst = self.find_one_by_element_id(execution_id, element_id).await?;
         let duration = (end_time - hi_actinst.start_time).num_milliseconds();
 
         let sql = r#"
@@ -70,16 +82,20 @@ impl ApfHiActinstDao {
             where id = $4
                 and rev = $5
         "#;
-        let rst = sqlx::query(sql)
-                .bind(end_time)
-                .bind(duration)
-                .bind(end_user_id)
-                .bind(&hi_actinst.id)
-                .bind(hi_actinst.rev)
-                .execute(&mut *tran)
-                .await?;
-
-        if rst.rows_affected() != 1 {
+        let stmt = self.tran().prepare(sql).await?;
+        let r = self.tran()
+            .execute(
+                &stmt, 
+                &[
+                    &end_time,
+                    &duration,
+                    &end_user_id,
+                    &&hi_actinst.id,
+                    &hi_actinst.rev
+                ]
+            )
+            .await?;
+        if r != 1 {
             Err(
                 AppError::new(
                     ErrorCode::InternalError,
@@ -87,7 +103,7 @@ impl ApfHiActinstDao {
                         &format!(
                             "apf_hi_actinst({}) is not updated correctly, affects ({}) != 1", 
                             hi_actinst.id, 
-                            rst.rows_affected()
+                            r
                         )
                     ), 
                     concat!(file!(), ":", line!()),
@@ -100,7 +116,7 @@ impl ApfHiActinstDao {
     }
 
     #[allow(unused)]
-    pub async fn get_by_id(&self, id: &str, tran: &mut Transaction<'_, Postgres>) -> Result<ApfHiActinst> {
+    pub async fn get_by_id(&self, id: &str) -> Result<ApfHiActinst> {
         let sql = r#"
             select id, rev, proc_def_id, proc_inst_id, execution_id, 
                 task_id, element_id, element_name, element_type,
@@ -108,21 +124,14 @@ impl ApfHiActinstDao {
             from apf_hi_actinst
             where id = $1
         "#;
-
-        let rst = sqlx::query_as::<_, ApfHiActinst>(sql)
-            .bind(id)
-            .fetch_one(&mut *tran)
-            .await?;
+        let stmt = self.tran().prepare(sql).await?;
+        let row = self.tran().query_one(&stmt, &[&id]).await?;
+        let rst = ApfHiActinst::from_row(row)?;
 
         Ok(rst)
     }
 
-    pub async fn find_one_by_element_id(
-        &self, 
-        execution_id: &str, 
-        element_id: &str, 
-        tran: &mut Transaction<'_, Postgres>
-    ) -> Result<ApfHiActinst> {
+    pub async fn find_one_by_element_id( &self, execution_id: &str, element_id: &str) -> Result<ApfHiActinst> {
         let sql = r#"
             select id, rev, proc_def_id, proc_inst_id, execution_id,
                 task_id, element_id, element_name, element_type,
@@ -131,14 +140,9 @@ impl ApfHiActinstDao {
             where execution_id = $1
                 and element_id = $2 
         "#;
-
-        // ptln!("{} , {}, {}", sql, execution_id, element_id);
-
-        let rst = sqlx::query_as::<_, ApfHiActinst>(sql)
-            .bind(execution_id)
-            .bind(element_id)
-            .fetch_one(&mut *tran)
-            .await?;
+        let stmt = self.tran().prepare(sql).await?;
+        let row = self.tran().query_one(&stmt, &[&execution_id, &element_id]).await?;
+        let rst = ApfHiActinst::from_row(row)?;
 
         Ok(rst)
     }
@@ -147,7 +151,6 @@ impl ApfHiActinstDao {
 #[cfg(test)]
 pub mod tests {
     use chrono::Local;
-    use sqlx::Connection;
     use crate::boot::db;
     use crate::dao::apf_ru_execution_dao::tests::create_test_procinst;
     use crate::dao::apf_ru_task_dao::tests::create_test_task;
@@ -158,7 +161,7 @@ pub mod tests {
     #[tokio::test]
     async fn test_create_hi_actinst() {
         let mut conn = db::get_connect().await.unwrap();
-        let mut tran = conn.begin().await.unwrap();
+        let mut tran = conn.transaction().await.unwrap();
 
         let procdef = create_test_deploy( "bpmn/process1.bpmn.xml", &mut tran).await;
         let proc_inst = create_test_procinst(&procdef, &mut tran).await;
@@ -173,25 +176,25 @@ pub mod tests {
     #[tokio::test]
     async fn test_find_hi_actinst_by_element() {
         let mut conn = db::get_connect().await.unwrap();
-        let mut tran = conn.begin().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
 
-        let procdef = create_test_deploy("bpmn/process1.bpmn.xml", &mut tran).await;
-        let proc_inst = create_test_procinst(&procdef, &mut tran).await;
-        let task = create_test_task(&proc_inst, &mut tran).await;
+        let procdef = create_test_deploy("bpmn/process1.bpmn.xml", &tran).await;
+        let proc_inst = create_test_procinst(&procdef, &tran).await;
+        let task = create_test_task(&proc_inst, &tran).await;
 
-        let hi_actinst = create_test_hi_actinst(&proc_inst, &task, &mut tran).await;
+        let hi_actinst = create_test_hi_actinst(&proc_inst, &task, &tran).await;
 
-        let hi_act_dao = ApfHiActinstDao::new();
+        let hi_act_dao = ApfHiActinstDao::new(&tran);
 
         let hi_actinst2 = hi_act_dao
-            .find_one_by_element_id(&proc_inst.id, &task.element_id.unwrap(), &mut tran)
+            .find_one_by_element_id(&proc_inst.id, &task.element_id.unwrap())
             .await.unwrap();
 
         assert_eq!(hi_actinst, hi_actinst2);
         tran.rollback().await.unwrap();
     }
 
-    async fn create_test_hi_actinst(proc_inst: &ApfRuExecution, task: &ApfRuTask, tran: &mut Transaction<'_, Postgres>)
+    async fn create_test_hi_actinst(proc_inst: &ApfRuExecution, task: &ApfRuTask, tran: &Transaction<'_>)
             -> ApfHiActinst {
 
         let now = Some(Local::now().naive_local());
@@ -209,8 +212,8 @@ pub mod tests {
             end_time: now,
             duration: Some(1000),
         };
-        let hi_act_dao = ApfHiActinstDao::new();
-        let hi_actinst = hi_act_dao.create(&new_hi_actinst, tran).await.unwrap();
+        let hi_act_dao = ApfHiActinstDao::new(tran);
+        let hi_actinst = hi_act_dao.create(&new_hi_actinst).await.unwrap();
         hi_actinst
     }
 }

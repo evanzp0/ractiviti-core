@@ -2,22 +2,31 @@ use std::any::{Any, TypeId};
 
 use color_eyre::Result;
 use rstring_builder::StringBuilder;
-use sqlx::database::HasArguments;
-use sqlx::{FromRow, Postgres, Transaction};
-use sqlx::query::{QueryAs, QueryScalar};
-use sqlx::postgres::PgRow;
+use tokio_postgres::Transaction;
 
 use crate::error::{AppError, ErrorCode};
 
-pub struct CrieriaDao {
-    
+use super::{BaseDao, Dao};
+
+pub struct CrieriaDao<'a> {
+    base_dao: BaseDao<'a>
 }
 
-type QueryAsType<'a, T> = QueryAs<'a, Postgres, T, <Postgres as HasArguments<'a>>::Arguments>;
-type QueryScalarAsType<'a, T> = QueryScalar<'a, Postgres, T, <Postgres as HasArguments<'a>>::Arguments>;
+impl<'a> Dao<'a> for CrieriaDao<'a> {
+    fn new(tran: &'a Transaction<'a>) -> Self {
+        Self {
+            base_dao: BaseDao::new(tran)
+        }
+    }
 
-impl CrieriaDao {
-    pub fn bind_params<'a, T>(mut query: QueryAsType<'a, T>, params: &Vec<Box<dyn Any>>) -> Result<QueryAsType<'a, T>> {
+    fn tran(&self) -> &Transaction {
+        self.base_dao.tran()
+    }
+}
+
+
+impl<'a> CrieriaDao<'a> {
+    pub fn bind_params<'a, T>(&self, mut query: QueryAsType<'a, T>, params: &Vec<Box<dyn Any>>) -> Result<QueryAsType<'a, T>> {
         for param in params {
             let param_type_id = (**param).type_id();
 
@@ -53,7 +62,7 @@ impl CrieriaDao {
         Ok(query)
     }
 
-    pub fn bind_params_scalar<'a, T>(mut query: QueryScalarAsType<'a, T>, params: &Vec<Box<dyn Any>>) -> Result<QueryScalarAsType<'a, T>> {
+    pub fn bind_params_scalar<'a, T>(&self, mut query: QueryScalarAsType<'a, T>, params: &Vec<Box<dyn Any>>) -> Result<QueryScalarAsType<'a, T>> {
         for param in params {
             let param_type_id = (**param).type_id();
 
@@ -89,7 +98,7 @@ impl CrieriaDao {
         Ok(query)
     }
 
-    fn bind_prarms_raw<'a, T>(mut query: QueryAsType<'a, T>, param: &Box<dyn Any>) -> Result<QueryAsType<'a, T>> {
+    fn bind_prarms_raw<'a, T>(&self, mut query: QueryAsType<'a, T>, param: &Box<dyn Any>) -> Result<QueryAsType<'a, T>> {
         let param_type_id = (**param).type_id();
         if TypeId::of::<String>() == param_type_id {
             let p = param.downcast_ref::<String>().ok_or(AppError::unexpected_error(concat!(file!(), ":", line!())))?;
@@ -128,7 +137,7 @@ impl CrieriaDao {
         Ok(query)
     }
 
-    fn bind_prarms_raw_scalar<'a, T>(mut query: QueryScalarAsType<'a, T>, param: &Box<dyn Any>) -> Result<QueryScalarAsType<'a, T>> {
+    fn bind_prarms_raw_scalar<'a, T>(&self, mut query: QueryScalarAsType<'a, T>, param: &Box<dyn Any>) -> Result<QueryScalarAsType<'a, T>> {
         let param_type_id = (**param).type_id();
         if TypeId::of::<String>() == param_type_id {
             let p = param.downcast_ref::<String>().ok_or(AppError::unexpected_error(concat!(file!(), ":", line!())))?;
@@ -168,7 +177,7 @@ impl CrieriaDao {
         Ok(query)
     }
 
-    pub fn split_params(param: &str) -> String {
+    pub fn split_params(&self, param: &str) -> String {
         let param_arr = param.split(',');
         let mut param_in_str = StringBuilder::new();
 
@@ -179,16 +188,18 @@ impl CrieriaDao {
         param_in_str.string()
     }
 
-    pub async fn find_by_crieria<'a, T>(sql: &str, params: &Vec<Box<dyn Any>>, tran: &mut Transaction<'a, Postgres>) -> Result<Vec<T>>
-            where T: for<'r> FromRow<'r, PgRow> + Send + Unpin {
-        let mut query = sqlx::query_as::<_, T>(sql);
-        query = CrieriaDao::bind_params(query, params)?;
+    pub async fn find_by_crieria<T>(&self, sql: &str, params: &Vec<Box<dyn Any>>) -> Result<Vec<T>> {
+        let query = self.tran().prepare(sql).await?;
+        query = self.bind_params(query, params)?;
+
         let rst = query.fetch_all(&mut *tran).await?;
 
         Ok(rst)
     }
 
-    pub async fn fetch_one_by_crieria<'a, T>(sql: &str, params: &Vec<Box<dyn Any>>, tran: &mut Transaction<'a, Postgres>) -> Result<T>
+    // params: &[&dyn ToSql + Sync]
+
+    pub async fn fetch_one_by_crieria<'a, T>(&self, sql: &str, params: &Vec<Box<dyn Any>>) -> Result<T>
             where T: for<'r> FromRow<'r, PgRow> + Send + Unpin {
 
         let mut query = sqlx::query_as::<_, T>(sql);
@@ -198,11 +209,12 @@ impl CrieriaDao {
         Ok(rst)
     }
 
-    pub async fn fetch_scalar_by_crieria(sql: &str, params: &Vec<Box<dyn Any>>, tran: &mut Transaction<'_, Postgres>) -> Result<i64> {
+    pub async fn fetch_scalar_by_crieria(&self, sql: &str, params: &Vec<Box<dyn Any>>) -> Result<i64> {
         let mut query = sqlx::query_scalar::<_, i64>(sql);
         query = CrieriaDao::bind_params_scalar(query, params)?;
         let rst = query.fetch_one(&mut *tran).await?;
 
         Ok(rst)
     }
+
 }

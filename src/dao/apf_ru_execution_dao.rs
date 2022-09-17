@@ -40,23 +40,25 @@ impl<'a> ApfRuExecutionDao<'a> {
         let new_id = gen_id();
         let rev:i32 = 1;
         let stmt = self.tran().prepare(sql).await?;
-        let row = self.tran().query_one(
-            &stmt, 
-            &[
-                &rev,
-                &obj.proc_inst_id,
-                &obj.business_key,
-                &obj.parent_id,
-                &obj.proc_def_id,
-                &obj.root_proc_inst_id,
-                &obj.element_id,
-                &obj.is_active,
-                &obj.start_time,
-                &obj.start_user,
-                &new_id,
-            ]
-        )
-        .await?;
+        let row = self
+            .tran()
+            .query_one(
+                &stmt, 
+                &[
+                    &rev,
+                    &obj.proc_inst_id,
+                    &obj.business_key,
+                    &obj.parent_id,
+                    &obj.proc_def_id,
+                    &obj.root_proc_inst_id,
+                    &obj.element_id,
+                    &obj.is_active,
+                    &obj.start_time,
+                    &obj.start_user,
+                    &new_id,
+                ]
+            )
+            .await?;
         let rst = ApfRuExecution::from_row(row)?;
 
         Ok(rst)
@@ -257,7 +259,7 @@ pub mod tests {
         tran.rollback().await.unwrap();
     }
 
-    pub async fn create_test_procinst<'a>(procdef: &ApfReProcdef, tran: &Transaction<'a>) -> ApfRuExecution {
+    pub async fn create_test_procinst(procdef: &ApfReProcdef, tran: &Transaction<'_>) -> ApfRuExecution {
         let exec_dao = ApfRuExecutionDao::new(tran);
         let new_exec = NewApfRuExecution {
             proc_def_id: procdef.id.to_owned(),

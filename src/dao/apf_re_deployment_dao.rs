@@ -53,17 +53,19 @@ impl<'a> ApfReDeploymentDao<'a> {
         "#;
         let new_id = gen_id();
         let stmt = self.tran().prepare(sql).await?;
-        let row = self.tran().query_one(
-            &stmt, 
-            &[
-                &new_id,
-                &obj.name,
-                &obj.key,
-                &obj.organization,
-                &obj.deployer
-            ]
-        )
-        .await?;
+        let row = self
+            .tran()
+            .query_one(
+                &stmt, 
+                &[
+                    &new_id,
+                    &obj.name,
+                    &obj.key,
+                    &obj.organization,
+                    &obj.deployer
+                ]
+            )
+            .await?;
 
         let rst = ApfReDeployment::from_row(row)?;
 
