@@ -35,7 +35,7 @@ impl<'a> ApfRuIdentitylinkDao<'a> {
             )
             returning *
         "#;
-        let new_id = gen_id();
+
         let new_id = gen_id();
         let rev:i32 = 1;
         let stmt = self.tran().prepare(sql).await?;
@@ -58,32 +58,15 @@ impl<'a> ApfRuIdentitylinkDao<'a> {
         let rst = ApfRuIdentitylink::from_row(row)?;
 
         Ok(rst)
-        // let rst = sqlx::query_as::<_, ApfRuIdentitylink>(sql)
-        //     .bind(1)
-        //     .bind(&obj.ident_type)
-        //     .bind(&obj.group_id)
-        //     .bind(&obj.user_id)
-        //     .bind(&obj.task_id)
-        //     .bind(&obj.proc_inst_id)
-        //     .bind(&obj.proc_def_id)
-        //     .bind(new_id)
-        //     .fetch_one(&mut *tran)
-        //     .await?;
-
-        // Ok(rst)
     }
 
     pub async fn delete_by_task_id(&self, task_id: &str)
             -> Result<u64> {
-        let sql = "delete from apf_ru_identitylink \
-                        where task_id = $1";
-        todo!()
-        // let rst = sqlx::query(sql)
-        //     .bind(task_id)
-        //     .execute(&mut *tran)
-        //     .await?;
+        let sql = r#" delete from apf_ru_identitylink where task_id = $1"#;
+        let stmt = self.tran().prepare(sql).await?;
+        let r = self.tran().execute(&stmt, &[&task_id]).await?;
 
-        // Ok(rst.rows_affected())
+        Ok(r)
     }
 
 }
