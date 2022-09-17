@@ -58,7 +58,7 @@ impl<'a> ApfHiProcinstDao<'a> {
         Ok(rst)
     }
 
-    pub async fn mark_end(&self, id: &str, end_element_id: &str, end_time: NaiveDateTime) -> Result<()> {
+    pub async fn mark_end(&self, id: &str, end_element_id: &str, end_time: NaiveDateTime) -> Result<u64> {
         let hi_procinst = self.get_by_id(id).await?;
         let duration = (end_time - hi_procinst.start_time).num_milliseconds();
 
@@ -97,7 +97,7 @@ impl<'a> ApfHiProcinstDao<'a> {
             )?
         }
 
-        Ok(())
+        Ok(r)
     }
 
     pub async fn get_by_id(&self, id: &str) -> Result<ApfHiProcinst> {

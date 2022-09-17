@@ -94,7 +94,7 @@ impl<'a> ApfHiTaskinstDao<'a> {
         Ok(rst)
     }
 
-    pub async fn mark_end(&self, task_id: &str, end_user_id: Option<String>) -> Result<()> {
+    pub async fn mark_end(&self, task_id: &str, end_user_id: Option<String>) -> Result<u64> {
         let hi_task = self.get_by_id(task_id).await?;
         let end_time = get_now();
         let duration = (end_time - hi_task.start_time).num_milliseconds();
@@ -128,7 +128,7 @@ impl<'a> ApfHiTaskinstDao<'a> {
             )?
         }
 
-        Ok(())
+        Ok(r)
     }
 
     pub async fn get_by_id(&self, id: &str) -> Result<ApfHiTaskinst> {

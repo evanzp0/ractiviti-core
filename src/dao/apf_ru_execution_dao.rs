@@ -100,7 +100,7 @@ impl<'a> ApfRuExecutionDao<'a> {
         element_id: &str,
         start_user: Option<String>,
         start_time: NaiveDateTime
-    ) -> Result<()> {
+    ) -> Result<u64> {
         let ru_exection = self.get_by_id(id).await?;
 
         let sql = r#"
@@ -127,10 +127,10 @@ impl<'a> ApfRuExecutionDao<'a> {
             )?
         }
 
-        Ok(())
+        Ok(r)
     }
 
-    pub async fn deactive_execution(&self, id: &str) -> Result<()> {
+    pub async fn deactive_execution(&self, id: &str) -> Result<u64> {
         let current_exec = self.get_by_id(id).await?;
 
         let sql = r#"
@@ -154,7 +154,7 @@ impl<'a> ApfRuExecutionDao<'a> {
             )?
         }
 
-        Ok(())
+        Ok(r)
     }
 
     pub async fn get_by_id(&self, id: &str) -> Result<ApfRuExecution> {

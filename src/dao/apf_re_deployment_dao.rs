@@ -27,8 +27,7 @@ impl<'a> ApfReDeploymentDao<'a> {
         }
     }
 
-    pub async fn get_by_id(&self, id: &str)
-            -> Result<ApfReDeployment> {
+    pub async fn get_by_id(&self, id: &str) -> Result<ApfReDeployment> {
         let sql = r#"
             select id, name, key, organization, deployer, deploy_time 
             from apf_re_deployment

@@ -35,7 +35,7 @@ impl ErrorCode {
             ErrorCode::NotFound => { "Not found".to_string() }
             ErrorCode::FileSizeError => { "File size error".to_string() }
             ErrorCode::ParseError => { "Parse error".to_string() }
-            ErrorCode::UnexpectedError => { "Parse error".to_string() }
+            ErrorCode::UnexpectedError => { "Unexpected error".to_string() }
         }
     }
 }

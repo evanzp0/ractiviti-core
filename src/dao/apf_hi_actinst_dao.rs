@@ -69,7 +69,7 @@ impl<'a> ApfHiActinstDao<'a> {
         Ok(rst)
     }
 
-    pub async fn mark_end( &self, execution_id: &str, element_id: &str,end_time: NaiveDateTime, end_user_id: Option<String>) -> Result<()> {
+    pub async fn mark_end( &self, execution_id: &str, element_id: &str,end_time: NaiveDateTime, end_user_id: Option<String>) -> Result<u64> {
         let hi_actinst = self.find_one_by_element_id(execution_id, element_id).await?;
         let duration = (end_time - hi_actinst.start_time).num_milliseconds();
 
@@ -112,7 +112,7 @@ impl<'a> ApfHiActinstDao<'a> {
             )?
         }
 
-        Ok(())
+        Ok(r)
     }
 
     #[allow(unused)]

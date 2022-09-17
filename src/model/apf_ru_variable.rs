@@ -2,16 +2,15 @@ use std::collections::HashMap;
 use serde::Serialize;
 use tokio_pg_mapper_derive::PostgresMapper;
 
-use crate::manager::engine::TypeWrapper;
-use super::VarType;
+use super::{WrappedValue, WrappedValueType};
 
+#[derive(Debug, Serialize, PartialEq, Default, Clone)]
 #[derive(PostgresMapper)]
 #[pg_mapper(table="apf_ru_variable")]
-#[derive(Debug, Serialize, PartialEq, Default, Clone)]
 pub struct ApfRuVariable {
     pub id: String,
     pub rev: i32,
-    pub var_type: VarType,
+    pub var_type: WrappedValueType,
     pub name: String,
     pub value: String,
     pub proc_inst_id: String,
@@ -21,7 +20,7 @@ pub struct ApfRuVariable {
 
 #[derive(Debug, Default)]
 pub struct ApfRuVariableDto {
-    pub var_type: VarType,
+    pub var_type: WrappedValueType,
     pub name: String,
     pub value: String,
     pub proc_inst_id: String,
@@ -46,24 +45,24 @@ impl ApfRuVariable {
         }
     }
 
-    pub fn convert_variables_to_map(variables: &Vec<ApfRuVariable>) -> HashMap<String, TypeWrapper> {
-        let mut rst_map: HashMap<String, TypeWrapper> = HashMap::new();
+    pub fn convert_variables_to_map(variables: &Vec<ApfRuVariable>) -> HashMap<String, WrappedValue> {
+        let mut rst_map: HashMap<String, WrappedValue> = HashMap::new();
         
         for ru_var in variables {
-            rst_map.insert(ru_var.name.clone(), TypeWrapper::from(ru_var.clone()));
+            rst_map.insert(ru_var.name.clone(), WrappedValue::from(ru_var.clone()));
         }
 
         rst_map
     }
 }
 
-impl From<ApfRuVariable> for TypeWrapper {
+impl From<ApfRuVariable> for WrappedValue {
     fn from(v: ApfRuVariable) -> Self {
         match v.var_type {
-            VarType::INT => TypeWrapper::i32(v.get_value_as_i32()),
-            VarType::DOUBLE => TypeWrapper::f64(v.get_value_as_f64()),
-            VarType::STRING => TypeWrapper::str(v.value),
-            VarType::BOOL => TypeWrapper::bool(v.get_value_as_bool()),
+            WrappedValueType::INT => WrappedValue::Int(v.get_value_as_i32()),
+            WrappedValueType::DOUBLE => WrappedValue::Double(v.get_value_as_f64()),
+            WrappedValueType::STRING => WrappedValue::Str(v.value),
+            WrappedValueType::BOOL => WrappedValue::Bool(v.get_value_as_bool()),
         }
     }
 }

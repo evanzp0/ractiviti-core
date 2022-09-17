@@ -20,10 +20,10 @@ chrono = {version = "0.4.21", features = ["serde"]}
 validator = { version = "0.14", features = ["derive"] }
 futures = { version = "0.3", features = ["compat"] }
 Boa = "0.13"
+deadpool-postgres = "0.10"
 tokio = { version = "1.0", features = ["full"] }
 tokio-pg-mapper = "0.2"
 tokio-pg-mapper-derive = "0.2"
-deadpool-postgres = "0.10"
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 
 [dev-dependencies]
