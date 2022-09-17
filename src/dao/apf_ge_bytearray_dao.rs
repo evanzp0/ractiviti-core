@@ -10,19 +10,20 @@ pub struct ApfGeBytearrayDao<'a> {
     base_dao: BaseDao<'a>
 }
 
-impl<'a> Dao<'a> for ApfGeBytearrayDao<'a> {
-    fn new(tran: &'a Transaction<'a>) -> Self {
-        Self {
-            base_dao: BaseDao::new(tran)
-        }
-    }
-
+impl<'a> Dao for ApfGeBytearrayDao<'a> {
     fn tran(&self) -> &Transaction {
         self.base_dao.tran()
     }
 }
 
 impl<'a> ApfGeBytearrayDao<'a> {
+
+    pub fn new(tran: &'a Transaction<'a>) -> Self {
+        Self {
+            base_dao: BaseDao::new(tran)
+        }
+    }
+
     pub async fn get_by_id(&self, id: &str) -> Result<ApfGeBytearray> {
         let sql = r#"
             select id, name, deployment_id, bytes

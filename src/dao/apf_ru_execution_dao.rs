@@ -11,12 +11,7 @@ pub struct ApfRuExecutionDao<'a> {
     base_dao: BaseDao<'a>
 }
 
-impl<'a> Dao<'a> for ApfRuExecutionDao<'a> {
-    fn new(tran: &'a Transaction<'a>) -> Self {
-        Self {
-            base_dao: BaseDao::new(tran)
-        }
-    }
+impl<'a> Dao for ApfRuExecutionDao<'a> {
 
     fn tran(&self) -> &Transaction {
         self.base_dao.tran()
@@ -24,6 +19,13 @@ impl<'a> Dao<'a> for ApfRuExecutionDao<'a> {
 }
 
 impl<'a> ApfRuExecutionDao<'a> {
+
+    pub fn new(tran: &'a Transaction<'a>) -> Self {
+        Self {
+            base_dao: BaseDao::new(tran)
+        }
+    }
+
     pub async fn create(&self, obj: &NewApfRuExecution) -> Result<ApfRuExecution> {
         let sql = r#"
             insert into apf_ru_execution (

@@ -8,12 +8,7 @@ pub struct ApfRuTaskDao<'a> {
     base_dao: BaseDao<'a>
 }
 
-impl<'a> Dao<'a> for ApfRuTaskDao<'a> {
-    fn new(tran: &'a Transaction<'a>) -> Self {
-        Self {
-            base_dao: BaseDao::new(tran)
-        }
-    }
+impl<'a> Dao for ApfRuTaskDao<'a> {
 
     fn tran(&self) -> &Transaction {
         self.base_dao.tran()
@@ -21,6 +16,12 @@ impl<'a> Dao<'a> for ApfRuTaskDao<'a> {
 }
 
 impl<'a> ApfRuTaskDao<'a> {
+
+    pub fn new(tran: &'a Transaction<'a>) -> Self {
+        Self {
+            base_dao: BaseDao::new(tran)
+        }
+    }
 
     pub async fn create(&self, obj: &NewApfRuTask) -> Result<ApfRuTask> {
         let sql = r#"

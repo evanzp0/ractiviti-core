@@ -13,19 +13,19 @@ pub struct ApfHiActinstDao<'a> {
     base_dao: BaseDao<'a>
 }
 
-impl<'a> Dao<'a> for ApfHiActinstDao<'a> {
-    fn new(tran: &'a Transaction<'a>) -> Self {
-        Self {
-            base_dao: BaseDao::new(tran)
-        }
-    }
-
+impl<'a> Dao for ApfHiActinstDao<'a> {
     fn tran(&self) -> &Transaction {
         self.base_dao.tran()
     }
 }
 
 impl<'a> ApfHiActinstDao<'a> {
+
+    pub fn new(tran: &'a Transaction<'a>) -> Self {
+        Self {
+            base_dao: BaseDao::new(tran)
+        }
+    }
 
     pub async fn create(&self, obj: &NewApfHiActinst) -> Result<ApfHiActinst> {
         let sql = r#"

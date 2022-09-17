@@ -6,7 +6,7 @@ use tokio_postgres::Transaction;
 use std::io::BufReader;
 
 use crate::boot::db;
-use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao, ApfReProcdefDao, Dao};
+use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao, ApfReProcdefDao};
 use crate::error::{AppError, ErrorCode};
 use crate::manager::engine::BpmnManager;
 use crate::model::{ApfReDeployment, NewApfGeBytearray, NewApfReDeployment, NewApfReProcdef, SuspensionState};

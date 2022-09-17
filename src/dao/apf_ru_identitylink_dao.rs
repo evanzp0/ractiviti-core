@@ -1,17 +1,30 @@
 use color_eyre::Result;
-use sqlx::{Postgres, Transaction};
+use tokio_pg_mapper::FromTokioPostgresRow;
+use tokio_postgres::Transaction;
 use crate::{model::{ApfRuIdentitylink, NewApfRuIdentitylink}, gen_id};
 
-pub struct ApfRuIdentitylinkDao {
+use super::{BaseDao, Dao};
 
+pub struct ApfRuIdentitylinkDao<'a> {
+    base_dao: BaseDao<'a>
 }
 
-impl ApfRuIdentitylinkDao {
-    pub fn new() -> Self {
-        Self {}
+impl<'a> Dao for ApfRuIdentitylinkDao<'a> {
+
+    fn tran(&self) -> &Transaction {
+        self.base_dao.tran()
+    }
+}
+
+impl<'a> ApfRuIdentitylinkDao<'a> {
+
+    pub fn new(tran: &'a Transaction<'a>) -> Self {
+        Self {
+            base_dao: BaseDao::new(tran)
+        }
     }
 
-    pub async fn create(&self, obj: &NewApfRuIdentitylink, tran: &mut Transaction<'_, Postgres>) -> Result<ApfRuIdentitylink> {
+    pub async fn create(&self, obj: &NewApfRuIdentitylink) -> Result<ApfRuIdentitylink> {
         let sql = r#"
             insert into apf_ru_identitylink (
                 rev, ident_type, group_id, user_id, task_id, 
@@ -23,39 +36,60 @@ impl ApfRuIdentitylinkDao {
             returning *
         "#;
         let new_id = gen_id();
-
-        let rst = sqlx::query_as::<_, ApfRuIdentitylink>(sql)
-            .bind(1)
-            .bind(&obj.ident_type)
-            .bind(&obj.group_id)
-            .bind(&obj.user_id)
-            .bind(&obj.task_id)
-            .bind(&obj.proc_inst_id)
-            .bind(&obj.proc_def_id)
-            .bind(new_id)
-            .fetch_one(&mut *tran)
+        let new_id = gen_id();
+        let rev:i32 = 1;
+        let stmt = self.tran().prepare(sql).await?;
+        let row = self
+            .tran()
+            .query_one(
+                &stmt, 
+                &[
+                    &rev,
+                    &obj.ident_type,
+                    &obj.group_id,
+                    &obj.user_id,
+                    &obj.task_id,
+                    &obj.proc_inst_id,
+                    &obj.proc_def_id,
+                    &new_id,
+                ]
+            )
             .await?;
+        let rst = ApfRuIdentitylink::from_row(row)?;
 
         Ok(rst)
+        // let rst = sqlx::query_as::<_, ApfRuIdentitylink>(sql)
+        //     .bind(1)
+        //     .bind(&obj.ident_type)
+        //     .bind(&obj.group_id)
+        //     .bind(&obj.user_id)
+        //     .bind(&obj.task_id)
+        //     .bind(&obj.proc_inst_id)
+        //     .bind(&obj.proc_def_id)
+        //     .bind(new_id)
+        //     .fetch_one(&mut *tran)
+        //     .await?;
+
+        // Ok(rst)
     }
 
-    pub async fn delete_by_task_id(&self, task_id: &str, tran: &mut Transaction<'_, Postgres>)
+    pub async fn delete_by_task_id(&self, task_id: &str)
             -> Result<u64> {
         let sql = "delete from apf_ru_identitylink \
                         where task_id = $1";
-        let rst = sqlx::query(sql)
-            .bind(task_id)
-            .execute(&mut *tran)
-            .await?;
+        todo!()
+        // let rst = sqlx::query(sql)
+        //     .bind(task_id)
+        //     .execute(&mut *tran)
+        //     .await?;
 
-        Ok(rst.rows_affected())
+        // Ok(rst.rows_affected())
     }
 
 }
 
 #[cfg(test)]
 pub mod tests {
-    use sqlx::Acquire;
     use crate::boot::db;
     use crate::dao::apf_ru_execution_dao::tests::create_test_procinst;
     use crate::dao::apf_ru_task_dao::tests::create_test_task;
@@ -67,23 +101,23 @@ pub mod tests {
     #[tokio::test]
     async fn test_create_and_delete() {
         let mut conn = db::get_connect().await.unwrap();
-        let mut tran = conn.begin().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
 
-        let procdef = create_test_deploy("bpmn/process1.bpmn.xml", &mut tran).await;
-        let proc_inst = create_test_procinst(&procdef, &mut tran).await;
-        let task = create_test_task(&proc_inst, &mut tran).await;
+        let procdef = create_test_deploy("bpmn/process1.bpmn.xml", &tran).await;
+        let proc_inst = create_test_procinst(&procdef, &tran).await;
+        let task = create_test_task(&proc_inst, &tran).await;
 
-        let ru_ident = create_test_apf_ru_identitylink(&task, &mut tran).await;
+        let ru_ident = create_test_apf_ru_identitylink(&task, &tran).await;
         assert_eq!(ru_ident.ident_type, IdentType::group);
 
-        let ru_ident_dao = ApfRuIdentitylinkDao::new();
-        let rst = ru_ident_dao.delete_by_task_id(&task.id, &mut tran).await.unwrap();
+        let ru_ident_dao = ApfRuIdentitylinkDao::new(&tran);
+        let rst = ru_ident_dao.delete_by_task_id(&task.id).await.unwrap();
         assert_eq!(rst, 1);
 
         tran.rollback().await.unwrap();
     }
 
-    pub async fn create_test_apf_ru_identitylink(task: &ApfRuTask, tran: &mut Transaction<'_, Postgres>) -> ApfRuIdentitylink {
+    pub async fn create_test_apf_ru_identitylink(task: &ApfRuTask, tran: &Transaction<'_>) -> ApfRuIdentitylink {
 
         let obj = NewApfRuIdentitylink {
             ident_type: IdentType::group,
@@ -94,8 +128,8 @@ pub mod tests {
             proc_def_id: Some(task.proc_def_id.clone()),
         };
 
-        let ru_ident_dao = ApfRuIdentitylinkDao::new();
-        let rst = ru_ident_dao.create(&obj, tran).await.unwrap();
+        let ru_ident_dao = ApfRuIdentitylinkDao::new(tran);
+        let rst = ru_ident_dao.create(&obj).await.unwrap();
 
         rst
     }

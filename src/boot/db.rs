@@ -15,7 +15,7 @@ async fn init_db_pool(){
     cfg.password = db.password.clone();
     cfg.dbname = db.dbname.clone();
     cfg.pool = Some(PoolConfig::new(db.max.unwrap_or(DB_DEFAULT_MAX_CONNECTS)));
-    cfg.manager = Some(ManagerConfig { recycling_method: RecyclingMethod::Fast });
+    cfg.manager = Some(ManagerConfig { recycling_method: RecyclingMethod::Verified });
     let pool = cfg.create_pool(Some(Runtime::Tokio1), NoTls).unwrap();
     DATABASE_POOL.set(pool).ok();
 }

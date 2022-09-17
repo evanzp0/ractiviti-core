@@ -9,14 +9,7 @@ pub struct ApfReProcdefDao<'a> {
     base_dao: BaseDao<'a>
 }
 
-impl<'a> Dao<'a> for ApfReProcdefDao<'a> {
-    fn new(tran: &'a Transaction<'a>) -> Self {
-        let base_dao = BaseDao::new(tran);
-
-        Self {
-            base_dao
-        }
-    }
+impl<'a> Dao for ApfReProcdefDao<'a> {
 
     fn tran(&self) -> &Transaction {
         self.base_dao.tran()
@@ -25,6 +18,14 @@ impl<'a> Dao<'a> for ApfReProcdefDao<'a> {
 
 impl<'a> ApfReProcdefDao<'a> {
 
+    pub fn new(tran: &'a Transaction<'a>) -> Self {
+        let base_dao = BaseDao::new(tran);
+
+        Self {
+            base_dao
+        }
+    }
+    
     pub async fn get_by_id(&self, id: &str) -> Result<ApfReProcdef> {
         let sql = r#"
             select id, rev, name, key, version, deployment_id, resource_name,
