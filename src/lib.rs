@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 use chrono::{Local, NaiveDateTime};
 
-pub mod boot;
+pub mod common;
 pub mod model;
 pub mod dao;
 pub mod error;

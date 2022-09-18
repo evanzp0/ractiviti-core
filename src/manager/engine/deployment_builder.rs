@@ -5,7 +5,7 @@ use color_eyre::Result;
 use tokio_postgres::Transaction;
 use std::io::BufReader;
 
-use crate::boot::db;
+use crate::common::db;
 use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao, ApfReProcdefDao};
 use crate::error::{AppError, ErrorCode};
 use crate::manager::engine::BpmnManager;
@@ -106,7 +106,7 @@ impl DeploymentBuilder {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::boot::db;
+    use crate::common::db;
     use crate::model::ApfReProcdef;
     use super::*;
 

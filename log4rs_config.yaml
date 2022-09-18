@@ -8,8 +8,8 @@ root:
   appenders:
     - my_stdout
 loggers:
-  approval_flow_core:
-    level: debug
+  ractiviti_core:
+    level: info
     appenders:
       - my_stdout
     additive: false

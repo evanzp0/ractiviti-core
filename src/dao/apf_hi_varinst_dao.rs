@@ -187,7 +187,7 @@ impl<'a> ApfHiVarinstDao<'a> {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::boot::db;
+    use crate::common::db;
     use crate::dao::apf_ru_execution_dao::tests::create_test_procinst;
     use crate::dao::apf_ru_task_dao::tests::create_test_task;
     use crate::dao::apf_ru_variable_dao::tests::create_test_apf_ru_var;

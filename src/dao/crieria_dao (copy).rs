@@ -177,8 +177,8 @@ impl<'a> CrieriaDao<'a> {
         Ok(query)
     }
 
-    pub fn split_params(&self, param: &str) -> String {
-        let param_arr = param.split(',');
+    pub fn split_params(&self, param: &str, spliter_char: char) -> String {
+        let param_arr = param.split(spliter_char);
         let mut param_in_str = StringBuilder::new();
 
         for p in param_arr {

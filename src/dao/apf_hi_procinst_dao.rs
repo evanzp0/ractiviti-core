@@ -118,7 +118,7 @@ impl<'a> ApfHiProcinstDao<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::boot::db;
+    use crate::common::db;
     use crate::dao::ApfRuExecutionDao;
     use crate::get_now;
     use crate::manager::engine::tests::create_test_deploy;

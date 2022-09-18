@@ -91,7 +91,7 @@ impl<'a> ApfRuTaskDao<'a> {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::boot::db;
+    use crate::common::db;
     use crate::dao::apf_ru_execution_dao::tests::create_test_procinst;
     use crate::get_now;
     use crate::manager::engine::tests::create_test_deploy;

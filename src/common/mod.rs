@@ -1,14 +1,16 @@
 pub mod db;
+pub mod string_builder;
 
 use std::sync::Arc;
 use once_cell::sync::OnceCell;
 use serde::Deserialize;
 
+pub use string_builder::*;
+
 #[derive(Debug, Deserialize)]
 pub struct Configure {
     pub server: Server,
     pub database: Database,
-    pub log: Log,
     pub profile: String,
 }
 
@@ -28,12 +30,6 @@ pub struct Database {
     pub user: Option<String>,
     pub password: Option<String>,
     pub dbname: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Log {
-    pub file: String,
-    pub level: String,
 }
 
 #[allow(dead_code)]

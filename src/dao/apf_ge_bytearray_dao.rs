@@ -83,7 +83,7 @@ impl<'a> ApfGeBytearrayDao<'a> {
 mod tests {
     use tokio_postgres::Transaction;
 
-    use crate::boot::db;
+    use crate::common::db;
     use crate::dao::ApfReDeploymentDao;
     use crate::model::{NewApfReDeployment};
     use super::*;

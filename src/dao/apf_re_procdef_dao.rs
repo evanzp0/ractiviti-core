@@ -136,7 +136,7 @@ impl<'a> ApfReProcdefDao<'a> {
 
 #[cfg(test)]
 mod tests{
-    use crate::boot::db;
+    use crate::common::db;
     use crate::dao::ApfReDeploymentDao;
     use crate::model::{NewApfGeBytearray, NewApfReDeployment, SuspensionState};
     use super::*;

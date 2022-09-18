@@ -161,7 +161,7 @@ impl<'a> ApfRuVariableDao<'a> {
             from apf_ru_variable 
             where proc_inst_id = $1 
                 and name = $2
-            limit 1
+            limit 2
         "#;
 
         let stmt = self.tran().prepare(sql).await?;
@@ -193,7 +193,7 @@ impl<'a> ApfRuVariableDao<'a> {
         let rows = self.tran().query(&stmt, &[&proc_inst_id]).await?;
         let rst = rows
             .iter()
-            .map(|row| ApfRuVariable::from_row_ref(row).unwrap())
+            .map(|row| ApfRuVariable::from_row_ref(row).expect("unexpected_error"))
             .collect::<Vec<ApfRuVariable>>();
 
         Ok(rst)
@@ -210,7 +210,7 @@ impl<'a> ApfRuVariableDao<'a> {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::boot::db;
+    use crate::common::db;
     use crate::dao::apf_ru_execution_dao::tests::create_test_procinst;
     use crate::dao::apf_ru_task_dao::tests::create_test_task;
     use crate::manager::engine::tests::create_test_deploy;

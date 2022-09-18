@@ -9,7 +9,7 @@ pub mod bpmn;
 // pub mod behavior;
 // pub mod js_engine;
 // pub mod type_wrapper;
-// pub mod query;
+pub mod query;
 
 // pub use process_engine::*;
 // pub use repository_service::*;

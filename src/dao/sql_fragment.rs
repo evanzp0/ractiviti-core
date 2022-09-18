@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
-use rstring_builder::{StringBuilder, Vcharsable};
+
+use crate::common::{Vcharsable, StringBuilder};
 
 #[allow(non_camel_case_types, unused)]
 pub enum SqlFragment {
@@ -10,63 +11,29 @@ pub enum SqlFragment {
     FIELD(String),
     FROM(String),
     ORDER_BY(String),
-    JION(String),
-    LEFT_JION(String),
+    JOIN(String),
+    LEFT_JOIN(String),
     DISTINCT,
 }
 
 impl SqlFragment {
-    pub const BLANK: &'static str = "";
+    pub const BLANK: &'static str = " ";
 }
+
 impl Display for SqlFragment {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut sb = StringBuilder::new();
         let rst = match self {
-            Self::SELECT => "select ".to_owned(),
-            Self::DISTINCT => " distinct ".to_owned(),
-            Self::COUNT(v) => format!(" count({}) ", v),
-            Self::WHERE => " where 1 = 1 ".to_owned(),
-            Self::JION(s) => {
-                let mut sb = StringBuilder::new();
-                sb.append(" join ")
-                    .append(s.to_owned())
-                    .append(Self::BLANK)
-                    .string()
-            },
-            Self::LEFT_JION(s) => {
-                let mut sb = StringBuilder::new();
-                sb.append(" left join ")
-                    .append(s.to_owned())
-                    .append(Self::BLANK)
-                    .string()
-            },
-            Self::AND(s) => {
-                let mut sb = StringBuilder::new();
-                    sb.append(" and ")
-                    .append(s.to_owned())
-                    .append(Self::BLANK)
-                    .string()
-            },
-            Self::FIELD(s) => {
-                let mut sb = StringBuilder::new();
-                sb.append(Self::BLANK)
-                    .append(s.to_owned())
-                    .append(Self::BLANK)
-                    .string()
-            },
-            Self::FROM(s) => {
-                let mut sb = StringBuilder::new();
-                sb.append(" from ")
-                    .append(s.to_owned())
-                    .append(Self::BLANK)
-                    .string()
-            },
-            Self::ORDER_BY(s) => {
-                let mut sb = StringBuilder::new();
-                sb.append(" order by ")
-                    .append(s.to_owned())
-                    .append(Self::BLANK)
-                    .string()
-            },
+            Self::SELECT => sb.append("SELECT").string(),
+            Self::DISTINCT => sb.append(Self::BLANK).append("DISTINCT").string(),
+            Self::COUNT(v) => sb.append(Self::BLANK).append(format!("COUNT({})", v)).string(),
+            Self::WHERE => sb.append(Self::BLANK).append("WHERE 1 = 1").string(),
+            Self::JOIN(s) => sb.append(Self::BLANK).append("JOIN").append(Self::BLANK).append(s.to_owned()).string(),
+            Self::LEFT_JOIN(s) => sb.append(Self::BLANK).append("LEFT JOIN").append(Self::BLANK).append(s.to_owned()).string(),
+            Self::AND(s) => sb.append(Self::BLANK).append("AND").append(Self::BLANK).append(s.to_owned()).string(),
+            Self::FIELD(s) => sb.append(Self::BLANK).append(s.to_owned()).string(),
+            Self::FROM(s) => sb.append(Self::BLANK).append("from").append(Self::BLANK).append(s.to_owned()).string(),
+            Self::ORDER_BY(s) => sb.append(Self::BLANK).append("order by").append(Self::BLANK).append(s.to_owned()).string(),
         };
 
         write!(f, "{}", rst)

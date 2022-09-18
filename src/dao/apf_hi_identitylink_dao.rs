@@ -73,7 +73,7 @@ impl<'a> ApfHiIdentitylinkDao<'a> {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::boot::db;
+    use crate::common::db;
     use crate::dao::apf_ru_execution_dao::tests::create_test_procinst;
     use crate::dao::apf_ru_identitylink_dao::tests::create_test_apf_ru_identitylink;
     use crate::dao::apf_ru_task_dao::tests::create_test_task;

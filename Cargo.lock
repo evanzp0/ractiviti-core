@@ -970,7 +970,7 @@ dependencies = [
  "log",
  "log4rs",
  "once_cell",
- "rstring-builder",
+ "regex",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1053,12 +1053,6 @@ name = "retain_mut"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4389f1d5789befaf6029ebd9f7dac4af7f7e3d61b69d4f30e2ac02b57e7712b0"
-
-[[package]]
-name = "rstring-builder"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7785259ac97a6d9de707c80b052e1d19c80d81c1d45ebb6912ecde09356a830"
 
 [[package]]
 name = "rustc-demangle"
