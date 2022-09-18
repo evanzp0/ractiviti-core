@@ -115,6 +115,7 @@ impl<'a> TaskQuery<'a> {
         Ok(rst)
     }
 
+    // fn build_sql<'c: 'b, 'b>(&'c self, params: &'b mut Vec<&'c (dyn ToSql + Sync)>) -> String {
     fn build_sql(&'a self, params: &mut Vec<&'a (dyn ToSql + Sync)>) -> String {
         let mut sql_builder = StringBuilder::new();
         sql_builder.append(SF::SELECT);
@@ -122,9 +123,8 @@ impl<'a> TaskQuery<'a> {
         if let Some(v) = &self.count {
             sql_builder.ltrim().append(SF::COUNT(v.to_owned()));
         } else {
-            let field = TaskQuery::SELECT_FIELD.trim();
             let re = Regex::new(r"\n\s*").unwrap();
-            let field = re.replace_all(field, " ");
+            let field = re.replace_all(TaskQuery::SELECT_FIELD, " ");
             let field = field.trim();
             sql_builder.ltrim().append(SF::DISTINCT).append(SF::FIELD(field.to_owned()));
         }
