@@ -5,11 +5,9 @@ use tokio_postgres::Transaction;
 use tokio_postgres::types::ToSql;
 
 use crate::dao::{SqlFragment as SF, BaseDao};
-use crate::error::AppError;
 use crate::model::ApfRuTask;
 use crate::common::StringBuilder;
 
-#[derive(Default)]
 pub struct TaskQuery<'a> {
     id: Option<String>,
     execution_id: Option<String>,
@@ -20,7 +18,7 @@ pub struct TaskQuery<'a> {
     process_definition_key: Option<String>,
     order_by: Option<String>,
     count: Option<String>,
-    base_dao: Option<BaseDao<'a>>,
+    base_dao: BaseDao<'a>,
 }
 
 #[allow(unused)]
@@ -36,8 +34,16 @@ impl<'a> TaskQuery<'a> {
 
     pub fn new(tran: &'a Transaction<'a>) -> Self {
         Self {
-            base_dao: Some(BaseDao::new(tran)),
-            ..Default::default()
+            base_dao: BaseDao::new(tran),
+            id: None,
+            execution_id: None,
+            proc_inst_id: None,
+            candidate_group: None,
+            candidate_user: None,
+            business_key: None,
+            process_definition_key: None,
+            order_by: None,
+            count: None,
         }
     }
 
@@ -84,10 +90,7 @@ impl<'a> TaskQuery<'a> {
     pub async fn fetch_all(&self) -> Result<Vec<ApfRuTask>> {
         let mut params: Vec<&(dyn ToSql + Sync)> = Vec::new();
         let sql= self.build_sql(&mut params);
-        let rst = match &self.base_dao {
-            Some(base_dao) => base_dao.fetcth_all::<ApfRuTask>(&sql, &params).await?,
-            None => Err(AppError::unexpected_error(concat!(file!(), ":", line!())))?,
-        };
+        let rst = self.base_dao.fetcth_all::<ApfRuTask>(&sql, &params).await?;
 
         Ok(rst)
     }
@@ -95,10 +98,7 @@ impl<'a> TaskQuery<'a> {
     pub async fn fetch_one(&self) -> Result<ApfRuTask> {
         let mut params: Vec<&(dyn ToSql + Sync)> = Vec::new();
         let sql= self.build_sql(&mut params);
-        let rst = match &self.base_dao {
-            Some(base_dao) => base_dao.fetch_one::<ApfRuTask>(&sql, &params).await?,
-            None => Err(AppError::unexpected_error(concat!(file!(), ":", line!())))?,
-        };
+        let rst = self.base_dao.fetch_one::<ApfRuTask>(&sql, &params).await?;
 
         Ok(rst)
     }
@@ -106,11 +106,7 @@ impl<'a> TaskQuery<'a> {
     pub async fn fetch_count(&self) -> Result<i64> {
         let mut params: Vec<&(dyn ToSql + Sync)> = Vec::new();
         let sql= self.build_sql(&mut params);
-
-        let rst = match &self.base_dao {
-            Some(base_dao) => base_dao.fetch_i64(&sql, &params).await?,
-            None => Err(AppError::unexpected_error(concat!(file!(), ":", line!())))?,
-        };
+        let rst = self.base_dao.fetch_i64(&sql, &params).await?;
 
         Ok(rst)
     }
