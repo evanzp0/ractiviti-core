@@ -111,8 +111,7 @@ impl<'a> TaskQuery<'a> {
         Ok(rst)
     }
 
-    // fn build_sql<'c: 'b, 'b>(&'c self, params: &'b mut Vec<&'c (dyn ToSql + Sync)>) -> String {
-    fn build_sql(&'a self, params: &mut Vec<&'a (dyn ToSql + Sync)>) -> String {
+    fn build_sql<'b: 'a>(&'b self, params: &mut Vec<&'a (dyn ToSql + Sync)>) -> String {
         let mut sql_builder = StringBuilder::new();
         sql_builder.append(SF::SELECT);
 
