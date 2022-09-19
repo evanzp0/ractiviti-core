@@ -1,15 +1,18 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+
 use color_eyre::Result;
+
 use crate::ArcRw;
 use crate::error::{AppError, ErrorCode};
-use crate::manager::engine::{BpmnProcess, Operator, TypeWrapper};
+use crate::manager::engine::{BpmnProcess, Operator};
+use crate::model::WrappedValue;
 
 #[derive(Debug)]
 pub struct OperatorContext {
     pub group_id: Option<String>,
     pub user_id: Option<String>,
-    pub variables: ArcRw<HashMap<String, TypeWrapper>>,
+    pub variables: ArcRw<HashMap<String, WrappedValue>>,
     pub queue: ArcRw<Vec<Operator>>,
     pub bpmn_process: Option<Arc<BpmnProcess>>,
 }
@@ -26,8 +29,7 @@ impl OperatorContext {
         }
     }
 
-    pub fn new(group_id: Option<String>, user_id: Option<String>,
-               variables: Option<ArcRw<HashMap<String, TypeWrapper>>>) -> Self {
+    pub fn new(group_id: Option<String>, user_id: Option<String>, variables: Option<ArcRw<HashMap<String, WrappedValue>>>) -> Self {
         Self {
             group_id,
             user_id,
@@ -38,11 +40,16 @@ impl OperatorContext {
     }
 
     pub fn bpmn_process_ex(&self) -> Result<Arc<BpmnProcess>> {
-        let bpmn_process = self.bpmn_process.clone().ok_or(
-            AppError::new(ErrorCode::NotFound,
-                          Some("bpmn_process not found"),
-                          concat!(file!(), ":", line!()),
-                          None))?;
+        let bpmn_process = self.bpmn_process
+            .clone()
+            .ok_or(
+                AppError::new(
+                    ErrorCode::NotFound,
+                    Some("bpmn_process not found"),
+                    concat!(file!(), ":", line!()),
+                    None
+                )
+            )?;
 
         Ok(bpmn_process)
     }
@@ -52,10 +59,12 @@ impl OperatorContext {
         let tmp_terminate_varname = self.bpmn_process_ex()?.terminate_on_false.clone();
 
         if let Some(terminate_varname) = tmp_terminate_varname {
-            let terminate_value = self.variables.read().unwrap()
+            let terminate_value = self.variables
+                .read()
+                .expect("unexpected error")
                 .get(&terminate_varname)
                 .and_then(|v| Some(v.clone()));
-            if let Some(TypeWrapper::bool(v)) = terminate_value {
+            if let Some(WrappedValue::Bool(v)) = terminate_value {
                 rst = (v == false);
             }
         }

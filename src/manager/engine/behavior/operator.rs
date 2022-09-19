@@ -1,9 +1,10 @@
-
-use sqlx::{Postgres, Transaction};
-use crate::manager::engine::{CompleteTaskCmd, ContinueProcessOperator,
-                             CreateAndStartProcessInstanceCmd, CreateTaskCmd, OperateRst,
-                             OperatorContext, TakeOutgoingFlowsOperator};
 use color_eyre::Result;
+use tokio_postgres::Transaction;
+
+use crate::manager::engine::{
+    CompleteTaskCmd, ContinueProcessOperator, CreateAndStartProcessInstanceCmd, CreateTaskCmd, OperateRst,
+    OperatorContext, TakeOutgoingFlowsOperator
+};
 
 #[derive(Debug)]
 pub enum Operator {
@@ -17,8 +18,7 @@ pub enum Operator {
 unsafe impl Send for Operator{}
 
 impl Operator {
-    pub async fn execute<'a>(&self, operator_ctx: &mut OperatorContext,
-        tran: &mut Transaction<'a, Postgres>) -> Result<OperateRst> 
+    pub async fn execute(&self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> 
     {
         match self {
             Operator::CreateAndStartProcessInstanceCmd(opt) => {

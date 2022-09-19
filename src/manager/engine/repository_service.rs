@@ -22,9 +22,9 @@ impl RepositoryService {
     }
 
 
-    pub async fn load_bpmn_by_deployment<'a>(&self, deployment_id: &str, tran: &'a Transaction<'a>) -> Result<BpmnProcess> {
+    pub async fn load_bpmn_by_deployment(&self, deployment_id: &str, tran: &Transaction<'_>) -> Result<BpmnProcess> {
         let bytearray_dao = ApfGeBytearrayDao::new(tran);
-        let ge_byte = bytearray_dao.get_by_deployment_id(deployment_id, tran).await?;
+        let ge_byte = bytearray_dao.get_by_deployment_id(deployment_id).await?;
 
         let bpmn_definitions = BpmnManager::new()
             .parse_from_bytes(ge_byte.bytes.unwrap_or(Vec::new()))?;

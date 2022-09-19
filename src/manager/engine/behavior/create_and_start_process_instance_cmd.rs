@@ -1,7 +1,9 @@
 use std::sync::Arc;
-use sqlx::{Postgres, Transaction};
-use crate::manager::engine::{BaseOperator, ContinueProcessOperator, OperateRst, Operator, OperatorContext};
+
 use color_eyre::Result;
+use tokio_postgres::Transaction;
+
+use crate::manager::engine::{BaseOperator, ContinueProcessOperator, OperateRst, Operator, OperatorContext};
 use crate::dao::{ApfHiProcinstDao, ApfRuExecutionDao};
 use crate::get_now;
 use crate::model::{ApfReProcdef, NewApfHiProcinst, NewApfRuExecution};
@@ -20,8 +22,7 @@ impl CreateAndStartProcessInstanceCmd {
         }
     }
 
-    pub async fn execute<'a> (&self, operator_ctx: &mut OperatorContext, tran: &mut Transaction<'a, Postgres>)
-            -> Result<OperateRst> {
+    pub async fn execute<'a> (&self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> {
         let start_event = operator_ctx.bpmn_process_ex()?.get_start_event()?;
 
         // create process instance
@@ -33,12 +34,12 @@ impl CreateAndStartProcessInstanceCmd {
             element_id: Some(start_event.get_element_id()),
             ..Default::default()
         };
-        let exec_dao = ApfRuExecutionDao::new();
-        let proc_inst = exec_dao.create_proc_inst(&new_exec, tran).await?;
+        let exec_dao = ApfRuExecutionDao::new(tran);
+        let proc_inst = exec_dao.create_proc_inst(&new_exec).await?;
 
         // create process instance history
         let proc_inst = Arc::new(proc_inst);
-        let hi_procinst_dao = ApfHiProcinstDao::new();
+        let hi_procinst_dao = ApfHiProcinstDao::new(tran);
         let new_hi_procinst = NewApfHiProcinst {
             id: proc_inst.id.to_owned(),
             proc_inst_id: proc_inst.id.clone(),
@@ -48,7 +49,7 @@ impl CreateAndStartProcessInstanceCmd {
             start_user: proc_inst.start_user.to_owned(),
             start_element_id: proc_inst.element_id.to_owned(),
         };
-        hi_procinst_dao.create(&new_hi_procinst, tran).await?;
+        hi_procinst_dao.create(&new_hi_procinst).await?;
 
 
 

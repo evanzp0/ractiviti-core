@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use sqlx::{Connection, Postgres, Transaction};
-use crate::boot::db;
-use crate::manager::engine::{CreateAndStartProcessInstanceCmd, Operator, OperatorContext, OperatorExecutor, ProcessEngine, TypeWrapper};
-use crate::model::ApfRuExecution;
+
 use color_eyre::Result;
+use tokio_postgres::Transaction;
+
+use crate::common::db;
+use crate::manager::engine::{CreateAndStartProcessInstanceCmd, Operator, OperatorContext, OperatorExecutor, ProcessEngine};
+use crate::model::{ApfRuExecution, WrappedValue};
 use crate::ArcRw;
 use crate::dao::ApfReProcdefDao;
 use crate::error::{AppError, ErrorCode};
@@ -24,12 +26,12 @@ impl RuntimeService {
         &self, 
         process_definition_key: &str,
         business_key: Option<String>,
-        variables: Option<ArcRw<HashMap<String, TypeWrapper>>>,
+        variables: Option<ArcRw<HashMap<String, WrappedValue>>>,
         user_id: Option<String>,
         group_id: Option<String>)
     -> Result<Arc<ApfRuExecution>> {
         let mut conn = db::get_connect().await.unwrap();
-        let mut tran = conn.begin().await.unwrap();
+        let mut tran = conn.transaction().await.unwrap();
 
         let mut operator_ctx = OperatorContext::new(group_id, user_id, variables);
 
@@ -46,10 +48,10 @@ impl RuntimeService {
         process_definition_key: &str,
         business_key: Option<String>,
         operator_ctx: &mut OperatorContext,
-        tran: &mut Transaction<'a, Postgres>)
+        tran: &Transaction<'_>)
     -> Result<Arc<ApfRuExecution>>  {
-        let procdef_dao = ApfReProcdefDao::new();
-        let re_def = procdef_dao.get_lastest_by_key(process_definition_key, tran).await?;
+        let procdef_dao = ApfReProcdefDao::new(tran);
+        let re_def = procdef_dao.get_lastest_by_key(process_definition_key).await?;
 
         let repository_service = ProcessEngine::new(ProcessEngine::DEFAULT_ENGINE).get_repository_service();
         let bpmn_process = repository_service.load_bpmn_by_deployment(&re_def.deployment_id, tran).await?;
@@ -78,8 +80,7 @@ impl RuntimeService {
 
 #[cfg(test)]
 mod tests {
-    use sqlx::Connection;
-    use crate::boot::db;
+    use crate::common::db;
     use crate::manager::engine::tests::create_test_deploy;
     use super::*;
 
@@ -88,12 +89,12 @@ mod tests {
         log4rs::prepare_log();
 
         let mut conn = db::get_connect().await.unwrap();
-        let mut tran = conn.begin().await.unwrap();
+        let mut tran = conn.transaction().await.unwrap();
 
         let procdef = create_test_deploy("bpmn/process1.bpmn.xml", &mut tran).await;
 
         let mut operator_ctx = OperatorContext::default();
-        let var_1 = TypeWrapper::bool(true);
+        let var_1 = WrappedValue::Bool(true);
         operator_ctx.variables.write().unwrap().insert("approval".to_owned(), var_1);
         let rt_service = RuntimeService::new();
         let procinst = rt_service._start_process_instance_by_key(

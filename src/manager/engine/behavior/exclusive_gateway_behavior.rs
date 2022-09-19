@@ -1,10 +1,15 @@
 use std::sync::Arc;
+
 use color_eyre::Result;
 use log4rs::{debug, error};
-use sqlx::{Postgres, Transaction};
+use tokio_postgres::Transaction;
+
 use crate::{ArcRw, get_now};
 use crate::error::{AppError, ErrorCode};
-use crate::manager::engine::{BaseOperator, BpmnElement, convert_map, Operator, OperatorContext, run_script, TakeOutgoingFlowsOperator};
+use crate::manager::engine::{
+    BaseOperator, BpmnElement, convert_map, Operator, OperatorContext, 
+    run_script, TakeOutgoingFlowsOperator
+};
 use crate::model::{ApfRuExecution, ApfRuTask};
 
 pub struct ExclusiveGatewayBehavior {
@@ -12,27 +17,25 @@ pub struct ExclusiveGatewayBehavior {
 }
 
 impl ExclusiveGatewayBehavior {
-    pub fn new(element: BpmnElement, proc_inst: Arc<ApfRuExecution>, current_exec: Option<ArcRw<ApfRuExecution>>,
-               current_task: Option<Arc<ApfRuTask>>) -> Self {
+    pub fn new(
+        element: BpmnElement, 
+        proc_inst: Arc<ApfRuExecution>, 
+        current_exec: Option<ArcRw<ApfRuExecution>>, 
+        current_task: Option<Arc<ApfRuTask>>
+    ) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, None, current_task),
         }
     }
 
-    pub async fn execute<'a>(&self, operator_ctx: &mut OperatorContext, tran: &mut Transaction<'a, Postgres>)
-            -> Result<()> {
-        debug!("ExclusiveGateway (process: {:?}, element: {})",
-                                    self.base.proc_inst.id,
-                                    self.base.element.get_element_id());
+    pub async fn execute<'a>(&self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<()> {
+        debug!("ExclusiveGateway (process: {:?}, element: {})", self.base.proc_inst.id, self.base.element.get_element_id());
 
         self.base.create_hi_actinst(None, tran).await?;
-
         self.leave(operator_ctx, tran).await
     }
 
-    pub async fn leave<'a>(&self, operator_ctx: &mut OperatorContext, tran: &mut Transaction<'a, Postgres>)
-                           -> Result<()>  {
-
+    pub async fn leave(&self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>)-> Result<()>  {
         self.base.mark_end_execution(operator_ctx, tran).await?;
 
         let element = &self.base.element;
@@ -58,8 +61,7 @@ impl ExclusiveGatewayBehavior {
                             }
                         }
                         Err(_) => {
-                            error!("process({:?}) flow({}) condition's result value is not boolean!",
-                                proc_inst.id, flow.get_id());
+                            error!("process({:?}) flow({}) condition's result value is not boolean!", proc_inst.id, flow.get_id());
                         }
                     }
                 } else {
@@ -86,11 +88,14 @@ impl ExclusiveGatewayBehavior {
                     element, self.base.proc_inst.clone(), self.base.current_exec());
                 operator_ctx.queue.write().unwrap().push(Operator::TakeOutgoingFlowsOperator(next_operator));
             } else {
-                Err(AppError::new(ErrorCode::NotFound,
-                                  Some(&format!("not found valid outflow for exclusive gateway (proc_inst: {:?}, element: {})",
-                                                proc_inst.id, node.get_id())),
-                                  concat!(file!(), ":", line!()),
-                                  None))?
+                Err(
+                    AppError::new(
+                        ErrorCode::NotFound,
+                        Some(&format!("not found valid outflow for exclusive gateway (proc_inst: {:?}, element: {})", proc_inst.id, node.get_id())),
+                        concat!(file!(), ":", line!()),
+                        None
+                    )
+                )?
             }
         }
 

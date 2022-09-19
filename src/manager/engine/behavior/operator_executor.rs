@@ -1,7 +1,7 @@
-
-use sqlx::{Postgres, Transaction};
-use crate::manager::engine::{OperateRst, Operator, OperatorContext};
 use color_eyre::Result;
+use tokio_postgres::Transaction;
+
+use crate::manager::engine::{OperateRst, Operator, OperatorContext};
 
 pub struct OperatorExecutor {
 }
@@ -12,8 +12,7 @@ impl OperatorExecutor {
         }
     }
 
-    pub async fn run<'a>(&mut self, operator_ctx: &mut OperatorContext, tran: &mut Transaction<'a, Postgres>)
-            -> Result<OperateRst> {
+    pub async fn run(&mut self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> {
         let mut rst = OperateRst::default();
 
         while !operator_ctx.queue.read().unwrap().is_empty() {
@@ -28,8 +27,7 @@ impl OperatorExecutor {
         Ok(rst)
     }
 
-    pub async fn execute<'a>(&mut self, operator: Operator, operator_ctx: &mut OperatorContext,
-        tran: &mut Transaction<'a, Postgres>) -> Result<OperateRst> 
+    pub async fn execute(&mut self, operator: Operator, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> 
     {
         operator_ctx.queue.write().unwrap().push(operator);
         let rst = self.run(operator_ctx, tran).await;

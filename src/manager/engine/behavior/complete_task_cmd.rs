@@ -1,10 +1,14 @@
 use std::sync::Arc;
-use sqlx::{Postgres, Transaction};
-use crate::ArcRw;
-use crate::manager::engine::{BaseOperator, BpmnElement, ContinueProcessOperator, NodeType,
-                             OperateRst, Operator, OperatorContext, ServiceTaskBehavior, UserTaskBehavior};
-use crate::model::{ApfRuExecution, ApfRuTask};
+
 use color_eyre::Result;
+use tokio_postgres::Transaction;
+
+use crate::ArcRw;
+use crate::manager::engine::{
+    BaseOperator, BpmnElement, ContinueProcessOperator, NodeType, OperateRst, 
+    Operator, OperatorContext, ServiceTaskBehavior, UserTaskBehavior
+};
+use crate::model::{ApfRuExecution, ApfRuTask};
 use crate::dao::{ApfHiTaskinstDao, ApfRuIdentitylinkDao, ApfRuTaskDao};
 
 #[derive(Debug)]
@@ -13,37 +17,31 @@ pub struct CompleteTaskCmd {
 }
 
 impl CompleteTaskCmd {
-
-    pub fn new(element: BpmnElement, proc_inst: Arc<ApfRuExecution>, current_exec: Option<ArcRw<ApfRuExecution>>,
-               current_task: Option<Arc<ApfRuTask>>) -> Self {
+    pub fn new(element: BpmnElement, proc_inst: Arc<ApfRuExecution>, current_exec: Option<ArcRw<ApfRuExecution>>, current_task: Option<Arc<ApfRuTask>>) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, None, current_task),
         }
     }
 
-    pub async fn execute<'a> (&self, operator_ctx: &mut OperatorContext, tran: &mut Transaction<'a, Postgres>)
-          -> Result<OperateRst> {
+    pub async fn execute(&self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> {
         let task = self.base.current_task_ex()?;
 
-        self.base.check_complete_task_priviledge(task.clone(),
-                                                 &self.base.element,
-                                                 operator_ctx,
-                                                 tran).await?;
+        self.base.check_complete_task_priviledge(task.clone(), &self.base.element, operator_ctx, tran).await?;
 
         // execute behavior and mark end
         self.execute_behavior(task.clone(), operator_ctx, tran).await?;
 
         // update task history
-        let hi_task_dao = ApfHiTaskinstDao::new();
-        hi_task_dao.mark_end(&task.id, operator_ctx.user_id.clone(), tran).await?;
+        let hi_task_dao = ApfHiTaskinstDao::new(tran);
+        hi_task_dao.mark_end(&task.id, operator_ctx.user_id.clone()).await?;
 
         // delete user and group data from ru_identity_link
-        let ru_ident_dao = ApfRuIdentitylinkDao::new();
-        ru_ident_dao.delete_by_task_id(&task.id, tran).await?;
+        let ru_ident_dao = ApfRuIdentitylinkDao::new(tran);
+        ru_ident_dao.delete_by_task_id(&task.id).await?;
 
         // delete runtime task
-        let task_dao = ApfRuTaskDao::new();
-        task_dao.delete(&task.id, tran).await?;
+        let task_dao = ApfRuTaskDao::new(tran);
+        task_dao.delete(&task.id).await?;
 
         // continue to next operator
         if operator_ctx.is_terminated()? {
@@ -66,7 +64,7 @@ impl CompleteTaskCmd {
         Ok(OperateRst::default())
     }
 
-    async fn execute_behavior<'a>(&self, task: Arc<ApfRuTask>, operator_ctx: &mut OperatorContext, tran: &mut Transaction<'a, Postgres>)
+    async fn execute_behavior(&self, task: Arc<ApfRuTask>, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>)
             -> Result<()> {
         match &self.base.element {
             BpmnElement::Edge(_) => {},

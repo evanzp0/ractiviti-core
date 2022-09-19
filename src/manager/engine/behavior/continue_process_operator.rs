@@ -1,10 +1,16 @@
 use std::sync::Arc;
-use sqlx::{Postgres, Transaction};
-use crate::manager::engine::{BaseOperator, BpmnElement, CreateTaskCmd, EndEventBehavior, ExclusiveGatewayBehavior, NodeType, OperateRst, Operator, OperatorContext, ParallelGatewayBehavior, StartEventBehavior};
+
 use color_eyre::Result;
+use tokio_postgres::Transaction;
 use crate::ArcRw;
 use crate::error::{AppError, ErrorCode};
 use crate::model::{ApfRuExecution, ApfRuTask};
+use crate::manager::engine::{
+    BaseOperator, BpmnElement, CreateTaskCmd, EndEventBehavior, ExclusiveGatewayBehavior, 
+    NodeType, OperateRst, Operator, OperatorContext, ParallelGatewayBehavior, 
+    StartEventBehavior
+};
+
 
 #[derive(Debug)]
 pub struct ContinueProcessOperator {
@@ -12,17 +18,19 @@ pub struct ContinueProcessOperator {
 }
 
 impl ContinueProcessOperator {
-    pub fn new(element: BpmnElement, terminate_element: Option<BpmnElement>, proc_inst: Arc<ApfRuExecution>,
-        current_exec: Option<ArcRw<ApfRuExecution>>, current_task: Option<Arc<ApfRuTask>>)
-        -> Self 
-    {
+    pub fn new(
+        element: BpmnElement, 
+        terminate_element: Option<BpmnElement>, 
+        proc_inst: Arc<ApfRuExecution>,
+        current_exec: Option<ArcRw<ApfRuExecution>>, 
+        current_task: Option<Arc<ApfRuTask>>
+    ) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, terminate_element, current_task),
         }
     }
 
-    pub async fn execute<'a> (&self, operator_ctx: &mut OperatorContext, tran: &mut Transaction<'a, Postgres>)
-        -> Result<OperateRst> 
+    pub async fn execute<'a> (&self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> 
     {
         match &self.base.element {
             BpmnElement::Edge(edge) => {
