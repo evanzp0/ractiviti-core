@@ -121,7 +121,7 @@ mod tests {
     use crate::common::db;
     use crate::dao::ApfRuExecutionDao;
     use crate::get_now;
-    use crate::manager::engine::tests::create_test_deploy;
+    use crate::service::engine::tests::create_test_deploy;
     use crate::model::NewApfRuExecution;
     use super::*;
 

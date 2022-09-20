@@ -214,7 +214,7 @@ pub mod tests {
     use std::sync::{Arc, RwLock};
     use crate::common::db;
     use crate::get_now;
-    use crate::manager::engine::tests::create_test_deploy;
+    use crate::service::engine::tests::create_test_deploy;
     use crate::model::{ApfReProcdef};
     use super::*;
 

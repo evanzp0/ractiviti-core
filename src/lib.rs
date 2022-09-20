@@ -5,7 +5,7 @@ pub mod common;
 pub mod model;
 pub mod dao;
 pub mod error;
-pub mod manager;
+pub mod service;
 
 pub type ArcRw<T> = Arc<RwLock<T>>;
 

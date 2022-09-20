@@ -192,7 +192,7 @@ pub mod tests {
     use crate::dao::apf_ru_task_dao::tests::create_test_task;
     use crate::dao::apf_ru_variable_dao::tests::create_test_apf_ru_var;
     use crate::get_now;
-    use crate::manager::engine::tests::create_test_deploy;
+    use crate::service::engine::tests::create_test_deploy;
     use crate::model::WrappedValueType;
 
     use super::*;
