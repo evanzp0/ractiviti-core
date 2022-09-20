@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use std::sync::Arc;
 
 use color_eyre::Result;
@@ -38,7 +39,7 @@ impl CreateAndStartProcessInstanceCmd {
         let proc_inst = exec_dao.create_proc_inst(&new_exec).await?;
 
         // create process instance history
-        let proc_inst = Arc::new(proc_inst);
+        let proc_inst = Rc::new(proc_inst);
         let hi_procinst_dao = ApfHiProcinstDao::new(tran);
         let new_hi_procinst = NewApfHiProcinst {
             id: proc_inst.id.to_owned(),

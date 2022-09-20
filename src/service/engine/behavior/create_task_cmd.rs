@@ -1,9 +1,9 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use color_eyre::Result;
 use tokio_postgres::Transaction;
 
-use crate::{ArcRw, get_now};
+use crate::{RcRefCell, get_now};
 use crate::dao::{ApfHiIdentitylinkDao, ApfHiTaskinstDao, ApfRuIdentitylinkDao, ApfRuTaskDao};
 use crate::model::{ApfRuExecution, IdentType, NewApfRuIdentitylink, NewApfRuTask};
 use crate::service::engine::{BaseOperator, BpmnElement, CompleteTaskCmd, NodeType, OperateRst, Operator, OperatorContext};
@@ -14,7 +14,7 @@ pub struct CreateTaskCmd {
 }
 
 impl CreateTaskCmd {
-    pub fn new(element: BpmnElement, proc_inst: Arc<ApfRuExecution>, current_exec: Option<ArcRw<ApfRuExecution>>) -> Self {
+    pub fn new(element: BpmnElement, proc_inst: Rc<ApfRuExecution>, current_exec: Option<RcRefCell<ApfRuExecution>>) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, None, None),
         }
@@ -23,6 +23,7 @@ impl CreateTaskCmd {
     pub async fn execute<'a> (&self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> {
         let proc_inst= &self.base.proc_inst;
         let current_exec = self.base.current_excution_ex()?;
+        let current_exec = current_exec.borrow();
         let element = &self.base.element;
 
         // create task
@@ -31,10 +32,10 @@ impl CreateTaskCmd {
             rev: 1,
             suspension_state: 0,
             create_time: now.clone(),
-            execution_id: current_exec.read().unwrap().id.clone(),
-            proc_inst_id: current_exec.read().unwrap().proc_inst_id()?,
-            proc_def_id: current_exec.read().unwrap().proc_def_id.clone(),
-            element_id: Some(current_exec.read().unwrap().element_id()?),
+            execution_id: current_exec.id.clone(),
+            proc_inst_id: current_exec.proc_inst_id()?,
+            proc_def_id: current_exec.proc_def_id.clone(),
+            element_id: Some(current_exec.element_id()?),
             element_name: element.get_element_name(),
             element_type: Some(element.get_element_type()),
             business_key: proc_inst.business_key.clone(),
@@ -97,7 +98,7 @@ impl CreateTaskCmd {
                     self.base.element.clone(),
                     proc_inst.clone(),
                     self.base.current_exec(),
-                    Some(Arc::new(task))
+                    Some(Rc::new(task))
                 );
 
                 operator_ctx.queue.push(Operator::CompleteTaskCmd(continue_operator));

@@ -1,8 +1,7 @@
-use std::sync::Arc;
-
+use std::rc::Rc;
 use color_eyre::Result;
 use tokio_postgres::Transaction;
-use crate::ArcRw;
+use crate::RcRefCell;
 use crate::error::{AppError, ErrorCode};
 use crate::model::{ApfRuExecution, ApfRuTask};
 use crate::service::engine::{
@@ -21,9 +20,9 @@ impl ContinueProcessOperator {
     pub fn new(
         element: BpmnElement, 
         terminate_element: Option<BpmnElement>, 
-        proc_inst: Arc<ApfRuExecution>,
-        current_exec: Option<ArcRw<ApfRuExecution>>, 
-        current_task: Option<Arc<ApfRuTask>>
+        proc_inst: Rc<ApfRuExecution>,
+        current_exec: Option<RcRefCell<ApfRuExecution>>, 
+        current_task: Option<Rc<ApfRuTask>>
     ) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, terminate_element, current_task),

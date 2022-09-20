@@ -1,10 +1,10 @@
-use std::sync::{Arc, RwLock};
+use std::rc::Rc;
 
 use color_eyre::Result;
 use log4rs::debug;
 use tokio_postgres::Transaction;
 
-use crate::{ArcRw, get_now};
+use crate::{RcRefCell, get_now};
 use crate::dao::ApfRuExecutionDao;
 use crate::error::{AppError, ErrorCode};
 use crate::service::engine::{
@@ -19,9 +19,9 @@ pub struct ParallelGatewayBehavior {
 impl ParallelGatewayBehavior {
     pub fn new(
         element: BpmnElement, 
-        proc_inst: Arc<ApfRuExecution>, 
-        current_exec: Option<ArcRw<ApfRuExecution>>, 
-        current_task: Option<Arc<ApfRuTask>>
+        proc_inst: Rc<ApfRuExecution>, 
+        current_exec: Option<RcRefCell<ApfRuExecution>>, 
+        current_task: Option<Rc<ApfRuTask>>
     ) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, None, current_task),
@@ -35,14 +35,14 @@ impl ParallelGatewayBehavior {
             let in_flows_count = node.in_flows(&bpmn_process).len() as i64;
 
             let exec_dao = ApfRuExecutionDao::new(tran);
-            let proc_inst_id = self.base.current_excution_ex()?.read().unwrap().proc_inst_id()?;
-            let element_id = self.base.current_excution_ex()?.read().unwrap().element_id()?;
+            let proc_inst_id = self.base.current_excution_ex()?.borrow().proc_inst_id()?;
+            let element_id = self.base.current_excution_ex()?.borrow().element_id()?;
 
             let inactive_exec_count = exec_dao.count_inactive_by_element(&proc_inst_id, &element_id).await?;
 
             if inactive_exec_count + 1 < in_flows_count {
                 let current_execution = self.base.current_excution_ex()?;
-                let current_execution_id = &current_execution.read().unwrap().id;
+                let current_execution_id = &current_execution.borrow().id;
 
                 exec_dao.deactive_execution(current_execution_id).await?;
             } else {
@@ -108,7 +108,7 @@ impl ParallelGatewayBehavior {
                     operator_ctx.user_id.clone(), tran
                 )
                 .await?;
-                let current_exec = Arc::new(RwLock::new(current_exec));
+                let current_exec = current_exec;
                 let next_operator = TakeOutgoingFlowsOperator::new(
                     BpmnElement::Edge(flow.clone()),
                     self.base.proc_inst.clone(),

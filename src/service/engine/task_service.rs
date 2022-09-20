@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::rc::Rc;
+use std::sync::Arc;
 
 use color_eyre::Result;
 use tokio_postgres::Transaction;
@@ -81,9 +83,9 @@ impl TaskService {
 
         let complete_task_cmd = CompleteTaskCmd::new(
             element.clone(), 
-            Arc::new(proc_inst), 
-            Some(Arc::new(RwLock::new(current_execution))), 
-            Some(Arc::new(current_task))
+            Rc::new(proc_inst), 
+            Some(Rc::new(RefCell::new(current_execution))), 
+            Some(Rc::new(current_task))
         );
 
         let mut operator_exec = OperatorExecutor::new();

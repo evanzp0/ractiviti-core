@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use color_eyre::Result;
@@ -28,7 +29,7 @@ impl RuntimeService {
         variables: HashMap<String, WrappedValue>,
         user_id: Option<String>,
         group_id: Option<String>)
-    -> Result<Arc<ApfRuExecution>> {
+    -> Result<Rc<ApfRuExecution>> {
         let mut conn = db::get_connect().await.unwrap();
         let tran = conn.transaction().await.unwrap();
 
@@ -48,7 +49,7 @@ impl RuntimeService {
         business_key: Option<String>,
         operator_ctx: &mut OperatorContext,
         tran: &Transaction<'_>)
-    -> Result<Arc<ApfRuExecution>>  {
+    -> Result<Rc<ApfRuExecution>>  {
         let procdef_dao = ApfReProcdefDao::new(tran);
         let re_def = procdef_dao.get_lastest_by_key(process_definition_key).await?;
 

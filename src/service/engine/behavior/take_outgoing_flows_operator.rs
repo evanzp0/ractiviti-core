@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use color_eyre::Result;
 use log4rs::debug;
@@ -6,7 +6,7 @@ use tokio_postgres::Transaction;
 
 use crate::service::engine::{BaseOperator, BpmnElement, ContinueProcessOperator, OperateRst, Operator, OperatorContext};
 use crate::model::ApfRuExecution;
-use crate::{ArcRw, get_now};
+use crate::{get_now, RcRefCell};
 use crate::error::{AppError, ErrorCode};
 
 #[derive(Debug)]
@@ -15,7 +15,7 @@ pub struct TakeOutgoingFlowsOperator {
 }
 
 impl TakeOutgoingFlowsOperator {
-    pub fn new(element: BpmnElement, proc_inst: Arc<ApfRuExecution>, current_exec: Option<ArcRw<ApfRuExecution>>) -> Self {
+    pub fn new(element: BpmnElement, proc_inst: Rc<ApfRuExecution>, current_exec: Option<RcRefCell<ApfRuExecution>>) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, None, None),
         }

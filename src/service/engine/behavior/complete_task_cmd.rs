@@ -1,9 +1,9 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use color_eyre::Result;
 use tokio_postgres::Transaction;
 
-use crate::ArcRw;
+use crate::RcRefCell;
 use crate::service::engine::{
     BaseOperator, BpmnElement, ContinueProcessOperator, NodeType, OperateRst, 
     Operator, OperatorContext, ServiceTaskBehavior, UserTaskBehavior
@@ -17,7 +17,7 @@ pub struct CompleteTaskCmd {
 }
 
 impl CompleteTaskCmd {
-    pub fn new(element: BpmnElement, proc_inst: Arc<ApfRuExecution>, current_exec: Option<ArcRw<ApfRuExecution>>, current_task: Option<Arc<ApfRuTask>>) -> Self {
+    pub fn new(element: BpmnElement, proc_inst: Rc<ApfRuExecution>, current_exec: Option<RcRefCell<ApfRuExecution>>, current_task: Option<Rc<ApfRuTask>>) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, None, current_task),
         }
@@ -64,7 +64,7 @@ impl CompleteTaskCmd {
         Ok(OperateRst::default())
     }
 
-    async fn execute_behavior(&self, task: Arc<ApfRuTask>, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>)
+    async fn execute_behavior(&self, task: Rc<ApfRuTask>, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>)
             -> Result<()> {
         match &self.base.element {
             BpmnElement::Edge(_) => {},

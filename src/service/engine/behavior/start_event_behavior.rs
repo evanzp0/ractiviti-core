@@ -1,10 +1,10 @@
-use std::sync::{Arc, RwLock};
+use std::rc::Rc;
 
 use color_eyre::Result;
 use log4rs::debug;
 use tokio_postgres::Transaction;
 
-use crate::{ArcRw, get_now};
+use crate::{RcRefCell, get_now};
 use crate::service::engine::{BaseOperator, BpmnElement, OperatorContext};
 use crate::model::{ApfRuExecution, ApfRuTask};
 
@@ -15,9 +15,9 @@ pub struct StartEventBehavior {
 impl StartEventBehavior {
     pub fn new(
         element: BpmnElement, 
-        proc_inst: Arc<ApfRuExecution>, 
-        current_exec: Option<ArcRw<ApfRuExecution>>, 
-        current_task: Option<Arc<ApfRuTask>>
+        proc_inst: Rc<ApfRuExecution>, 
+        current_exec: Option<RcRefCell<ApfRuExecution>>, 
+        current_task: Option<Rc<ApfRuTask>>
     ) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, None, current_task),
@@ -36,7 +36,6 @@ impl StartEventBehavior {
                 tran
             )
             .await?;
-        let current_execution = Arc::new(RwLock::new(current_execution));
 
         // update current execution in the base
         self.base.set_current_exec(current_execution.clone());

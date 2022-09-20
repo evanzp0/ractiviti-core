@@ -14,7 +14,7 @@ pub mod exclusive_gateway_behavior;
 pub mod parallel_gateway_behavior;
 pub mod end_event_behavior;
 
-use std::sync::Arc;
+use std::rc::Rc;
 pub use operator::*;
 pub use operator_executor::*;
 pub use continue_process_operator::*;
@@ -34,5 +34,5 @@ pub use end_event_behavior::*;
 
 #[derive(Default, PartialEq, Debug)]
 pub struct OperateRst {
-    pub process_instantce: Option<Arc<ApfRuExecution>>
+    pub process_instantce: Option<Rc<ApfRuExecution>>
 }

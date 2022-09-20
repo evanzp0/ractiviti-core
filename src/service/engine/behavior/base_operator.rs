@@ -1,11 +1,13 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use chrono::NaiveDateTime;
 use tokio_postgres::Transaction;
 use color_eyre::Result;
 
-use crate::{ArcRw, get_now};
+use crate::{get_now, RcRefCell};
 use crate::error::{AppError, ErrorCode};
 use crate::service::engine::{ BpmnEdge, BpmnElement, NodeType, OperateRst, Operator,OperatorContext, TakeOutgoingFlowsOperator };
 use crate::model::{ApfRuExecution, ApfRuTask, ApfRuVariableDto, NewApfHiActinst, NewApfRuExecution, WrappedValue};
@@ -14,20 +16,20 @@ use crate::service::engine::query::TaskQuery;
 
 #[derive(Debug)]
 pub struct BaseOperator {
-    pub proc_inst: Arc<ApfRuExecution>,
-    current_exec: Option<ArcRw<ApfRuExecution>>,
+    pub proc_inst: Rc<ApfRuExecution>,
+    current_exec: Option<RcRefCell<ApfRuExecution>>,
     pub element: BpmnElement,
     pub terminate_element: Option<BpmnElement>,
-    pub current_task: Option<Arc<ApfRuTask>>,
+    pub current_task: Option<Rc<ApfRuTask>>,
 }
 
 impl BaseOperator {
     pub fn new(
-        proc_inst: Arc<ApfRuExecution>, 
-        current_exec: Option<ArcRw<ApfRuExecution>>, 
-        element:BpmnElement, 
+        proc_inst: Rc<ApfRuExecution>, 
+        current_exec: Option<RcRefCell<ApfRuExecution>>, 
+        element: BpmnElement, 
         terminate_element: Option<BpmnElement>, 
-        current_task: Option<Arc<ApfRuTask>>
+        current_task: Option<Rc<ApfRuTask>>
     ) -> Self {
         Self {
             proc_inst,
@@ -38,22 +40,22 @@ impl BaseOperator {
         }
     }
 
-    pub fn current_exec(&self) -> Option<ArcRw<ApfRuExecution>> {
+    pub fn current_exec(&self) -> Option<RcRefCell<ApfRuExecution>> {
         self.current_exec.clone()
     }
 
-    pub fn set_current_exec(&mut self, current_exec: ArcRw<ApfRuExecution>) {
+    pub fn set_current_exec(&mut self, current_exec: RcRefCell<ApfRuExecution>) {
         self.current_exec = Some(current_exec);
     }
 
-    pub fn current_task_ex(&self) -> Result<Arc<ApfRuTask>> {
+    pub fn current_task_ex(&self) -> Result<Rc<ApfRuTask>> {
         let current_task = self.current_task
             .clone()
             .ok_or(AppError::new(ErrorCode::NotFound, Some("current task not found"), concat!(file!(), ":", line!()), None))?;
         Ok(current_task)
     }
 
-    pub fn current_excution_ex(&self) -> Result<ArcRw<ApfRuExecution>> {
+    pub fn current_excution_ex(&self) -> Result<RcRefCell<ApfRuExecution>> {
         let current_exec = self.current_exec
             .clone()
             .ok_or(AppError::new(ErrorCode::NotFound, Some("current execution not found"), concat!(file!(), ":", line!()), None))?;
@@ -123,10 +125,11 @@ impl BaseOperator {
         tran: &Transaction<'_>
     ) -> Result<()> {
         let current_exec = self.current_excution_ex()?;
-        let current_exec_id = current_exec.read().unwrap().id.clone();
-        current_exec.write().unwrap().element_id = Some(element_id.to_owned());
-        current_exec.write().unwrap().start_user = start_user.clone();
-        current_exec.write().unwrap().start_time = start_time;
+        let mut current_exec = current_exec.borrow_mut();
+        let current_exec_id = current_exec.id.clone();
+        current_exec.element_id = Some(element_id.to_owned());
+        current_exec.start_user = start_user.clone();
+        current_exec.start_time = start_time;
 
         let exec_dao = ApfRuExecutionDao::new(tran);
         exec_dao.mark_begin(&current_exec_id, element_id, start_user, start_time).await?;
@@ -136,13 +139,14 @@ impl BaseOperator {
 
     pub async fn mark_end_execution<'a>(&self, operator_ctx: &OperatorContext, tran: &Transaction<'_>) -> Result<()> {
         let current_exec = self.current_excution_ex()?;
-        let current_exec_id = &current_exec.read().unwrap().id;
-        let element_id = current_exec.read().unwrap().element_id()?;
+        let current_exec = current_exec.borrow();
+        let current_exec_id = current_exec.id.clone();
+        let element_id = current_exec.element_id()?;
         let end_time = get_now();
         let end_user_id = operator_ctx.user_id.clone();
 
         let hi_act_dao = ApfHiActinstDao::new(tran);
-        hi_act_dao.mark_end(current_exec_id, &element_id, end_time, end_user_id).await?;
+        hi_act_dao.mark_end(&current_exec_id, &element_id, end_time, end_user_id).await?;
 
         Ok(())
     }
@@ -171,16 +175,18 @@ impl BaseOperator {
     }
 
     pub async fn create_hi_actinst(&self, task_id: Option<String>, tran: &Transaction<'_>) -> Result<OperateRst> {
+        let current_exec = self.current_excution_ex()?;
+        let current_exec = current_exec.borrow();
         let new_hi_actinst = NewApfHiActinst {
             rev: 1,
             proc_def_id: self.proc_inst.proc_def_id.clone(),
             proc_inst_id: self.proc_inst.proc_inst_id.clone(),
-            execution_id: self.current_excution_ex()?.read().unwrap().id.clone(),
+            execution_id: current_exec.id.clone(),
             element_id: Some(self.element.get_element_id()),
             element_name: self.element.get_element_name(),
             element_type: Some(self.element.get_element_type()),
             start_time: get_now(),
-            start_user_id: self.current_excution_ex()?.read().unwrap().start_user.clone(),
+            start_user_id: current_exec.start_user.clone(),
             task_id,
             end_time: None,
             duration: None
@@ -197,7 +203,7 @@ impl BaseOperator {
         start_time: NaiveDateTime, 
         start_user: Option<String>, 
         tran: &Transaction<'_>
-    ) -> Result<ApfRuExecution> {
+    ) -> Result<RcRefCell<ApfRuExecution>> {
         let new_exec = NewApfRuExecution {
             parent_id: Some(self.proc_inst.id.clone()),
             proc_inst_id: Some(self.proc_inst.id.clone()),
@@ -213,7 +219,7 @@ impl BaseOperator {
         let exec_dao = ApfRuExecutionDao::new(tran);
         let current_execution = exec_dao.create(&new_exec).await?;
 
-        Ok(current_execution)
+        Ok(Rc::new(RefCell::new(current_execution)))
     }
 
     pub async fn create_or_update_variables(&self, variables: &mut HashMap<String, WrappedValue>, tran: &Transaction<'_>) -> Result<()> {
@@ -225,7 +231,7 @@ impl BaseOperator {
             dto.proc_inst_id = self.proc_inst.id.clone();
 
             if let Some(current_exec) = &self.current_exec {
-                dto.execution_id = Some(current_exec.read().unwrap().id.clone());
+                dto.execution_id = Some(current_exec.borrow().id.clone());
             }
 
             if let Some(task) = &self.current_task {
@@ -245,7 +251,7 @@ impl BaseOperator {
 
     pub async fn check_complete_task_priviledge<'a>(
         &self, 
-        task: Arc<ApfRuTask>, 
+        task: Rc<ApfRuTask>, 
         element: &BpmnElement,
         operator_ctx: &mut OperatorContext,
         tran: &Transaction<'_>

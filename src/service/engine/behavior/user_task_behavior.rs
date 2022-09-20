@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use color_eyre::Result;
 use log4rs::debug;
 use tokio_postgres::Transaction;
 
-use crate::ArcRw;
+use crate::RcRefCell;
 use crate::service::engine::{BaseOperator, BpmnElement, OperatorContext};
 use crate::model::{ApfRuExecution, ApfRuTask};
 
@@ -13,7 +13,7 @@ pub struct UserTaskBehavior {
 }
 
 impl UserTaskBehavior {
-    pub fn new(element: BpmnElement, proc_inst: Arc<ApfRuExecution>, current_exec: Option<ArcRw<ApfRuExecution>>, current_task: Option<Arc<ApfRuTask>>) -> Self {
+    pub fn new(element: BpmnElement, proc_inst: Rc<ApfRuExecution>, current_exec: Option<RcRefCell<ApfRuExecution>>, current_task: Option<Rc<ApfRuTask>>) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, None, current_task),
         }

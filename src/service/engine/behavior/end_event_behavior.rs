@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use color_eyre::Result;
 use log4rs::debug;
 use tokio_postgres::Transaction;
 
-use crate::{ArcRw, get_now};
+use crate::{RcRefCell, get_now};
 use crate::service::engine::{BaseOperator, BpmnElement, OperatorContext};
 use crate::dao::{ApfHiProcinstDao, ApfRuExecutionDao, ApfRuVariableDao};
 use crate::model::{ApfRuExecution, ApfRuTask};
@@ -17,9 +17,9 @@ impl EndEventBehavior {
     pub fn new(
         element: BpmnElement, 
         terminate_element: Option<BpmnElement>, 
-        proc_inst: Arc<ApfRuExecution>, 
-        current_exec: Option<ArcRw<ApfRuExecution>>,
-        current_task: Option<Arc<ApfRuTask>>
+        proc_inst: Rc<ApfRuExecution>, 
+        current_exec: Option<RcRefCell<ApfRuExecution>>,
+        current_task: Option<Rc<ApfRuTask>>
     ) -> Self {
         Self {
             base: BaseOperator::new(proc_inst, current_exec, element, terminate_element, current_task),
@@ -45,7 +45,7 @@ impl EndEventBehavior {
         }
 
         let current_execution = self.base.current_excution_ex()?;
-        let procinst_id = current_execution.read().unwrap().proc_inst_id()?;
+        let procinst_id = current_execution.borrow().proc_inst_id()?;
 
         // delete current variable
         let var_dao = ApfRuVariableDao::new(tran);
@@ -53,11 +53,11 @@ impl EndEventBehavior {
 
         // delete current execution record
         let exec_dao = ApfRuExecutionDao::new(tran);
-        exec_dao.delete(&current_execution.read().unwrap().id).await?;
+        exec_dao.delete(&current_execution.borrow().id).await?;
 
         // mark end of proc_inst
         let hi_procinst_dao = ApfHiProcinstDao::new(tran);
-        let mut element_id = current_execution.read().unwrap().element_id()?;
+        let mut element_id = current_execution.borrow().element_id()?;
         if let Some(el) = &self.base.terminate_element {
             element_id = el.get_element_id();
         }
