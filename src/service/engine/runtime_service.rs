@@ -31,12 +31,12 @@ impl RuntimeService {
         group_id: Option<String>)
     -> Result<Arc<ApfRuExecution>> {
         let mut conn = db::get_connect().await.unwrap();
-        let mut tran = conn.transaction().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
 
         let mut operator_ctx = OperatorContext::new(group_id, user_id, variables);
 
         let rst = self._start_process_instance_by_key(
-            process_definition_key, business_key, &mut operator_ctx, &mut tran).await?;
+            process_definition_key, business_key, &mut operator_ctx, &tran).await?;
 
         tran.commit().await?;
 
@@ -89,9 +89,9 @@ mod tests {
         log4rs::prepare_log();
 
         let mut conn = db::get_connect().await.unwrap();
-        let mut tran = conn.transaction().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
 
-        let procdef = create_test_deploy("bpmn/process1.bpmn.xml", &mut tran).await;
+        let procdef = create_test_deploy("bpmn/process1.bpmn.xml", &tran).await;
 
         let mut operator_ctx = OperatorContext::default();
         let var_1 = WrappedValue::Bool(true);
@@ -101,7 +101,7 @@ mod tests {
             &procdef.key,
             Some("process_biz_key".to_owned()),
             &mut operator_ctx,
-            &mut tran
+            &tran
         )
         .await
         .unwrap();

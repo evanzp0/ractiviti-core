@@ -29,10 +29,10 @@ impl TaskService {
         group_id: Option<String>
     ) -> Result<()> {
         let mut conn = db::get_connect().await.unwrap();
-        let mut tran = conn.transaction().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
 
         let mut operator_ctx = OperatorContext::new(group_id, user_id, variables);
-        self._complete(task_id, &mut operator_ctx, &mut tran).await?;
+        self._complete(task_id, &mut operator_ctx, &tran).await?;
         tran.commit().await?;
 
         Ok(())
@@ -103,16 +103,16 @@ mod tests {
         log4rs::prepare_log();
 
         let mut conn = db::get_connect().await.unwrap();
-        let mut tran = conn.transaction().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
 
-        let procdef = create_test_deploy("bpmn/process_2.bpmn.xml", &mut tran).await;
+        let procdef = create_test_deploy("bpmn/process_2.bpmn.xml", &tran).await;
         let rt_service = ProcessEngine::new(ProcessEngine::DEFAULT_ENGINE).get_runtime_service();
         let mut operator_ctx = OperatorContext::default();
         let procinst = rt_service._start_process_instance_by_key(
             &procdef.key,
             Some("process_biz_key_2".to_owned()),
             &mut operator_ctx,
-            &mut tran).await.unwrap();
+            &tran).await.unwrap();
 
         let task = TaskQuery::new(&tran)
             .proc_inst_id(&procinst.id)
@@ -130,7 +130,7 @@ mod tests {
             Some(variables));
 
         let task_service = TaskService::new();
-        task_service._complete(&task.id, &mut operator_ctx, &mut tran).await.unwrap();
+        task_service._complete(&task.id, &mut operator_ctx, &tran).await.unwrap();
 
         tran.rollback().await.unwrap();
     }
