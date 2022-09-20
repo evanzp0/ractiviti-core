@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 use color_eyre::Result;
 use tokio_postgres::Transaction;
 
-use crate::{ArcRw, get_now};
+use crate::get_now;
 use crate::common::db;
 use crate::dao::{ApfHiVarinstDao, ApfReProcdefDao, ApfRuExecutionDao, ApfRuTaskDao, ApfRuVariableDao};
 use crate::error::AppError;
@@ -21,10 +21,10 @@ impl TaskService {
         Self {}
     }
 
-    pub async fn complete<'a>(
+    pub async fn complete(
         &self, 
         task_id: &str,
-        variables: Option<ArcRw<HashMap<String, WrappedValue>>>,
+        variables: HashMap<String, WrappedValue>,
         user_id: Option<String>,
         group_id: Option<String>
     ) -> Result<()> {
@@ -56,7 +56,7 @@ impl TaskService {
         let var_dao = ApfRuVariableDao::new(tran);
         let hi_var_dao = ApfHiVarinstDao::new(tran);
         let update_time = get_now();
-        for (key, value) in operator_ctx.variables.read().unwrap().iter() {
+        for (key, value) in operator_ctx.variables.iter() {
             let dto = ApfRuVariableDto {
                 var_type: value.get_type(),
                 name: key.to_owned(),
@@ -71,7 +71,8 @@ impl TaskService {
 
         let var_insts = var_dao.find_all_by_proc_inst(&current_task.proc_inst_id).await?;
         let vars_map = ApfRuVariable::convert_variables_to_map(&var_insts);
-        operator_ctx.variables = Arc::new(RwLock::new(vars_map));
+
+        operator_ctx.variables = vars_map;
 
         // continue to handle operator
         let execution_dao = ApfRuExecutionDao::new(tran);
@@ -108,11 +109,15 @@ mod tests {
         let procdef = create_test_deploy("bpmn/process_2.bpmn.xml", &tran).await;
         let rt_service = ProcessEngine::new(ProcessEngine::DEFAULT_ENGINE).get_runtime_service();
         let mut operator_ctx = OperatorContext::default();
-        let procinst = rt_service._start_process_instance_by_key(
-            &procdef.key,
-            Some("process_biz_key_2".to_owned()),
-            &mut operator_ctx,
-            &tran).await.unwrap();
+        let procinst = rt_service
+            ._start_process_instance_by_key(
+                &procdef.key,
+                Some("process_biz_key_2".to_owned()),
+                &mut operator_ctx,
+                &tran
+            )
+            .await
+            .unwrap();
 
         let task = TaskQuery::new(&tran)
             .proc_inst_id(&procinst.id)
@@ -122,13 +127,12 @@ mod tests {
 
         let mut variables = HashMap::new();
         variables.insert("approval_pass".to_owned(), WrappedValue::Bool(false));
-        let variables = Arc::new(RwLock::new(variables));
-
+        
         let mut operator_ctx = OperatorContext::new(
             None,
             Some("user_1".to_owned()),
-            Some(variables));
-
+            variables
+        );
         let task_service = TaskService::new();
         task_service._complete(&task.id, &mut operator_ctx, &tran).await.unwrap();
 

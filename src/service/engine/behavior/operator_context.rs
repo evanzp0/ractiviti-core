@@ -12,7 +12,7 @@ use crate::model::WrappedValue;
 pub struct OperatorContext {
     pub group_id: Option<String>,
     pub user_id: Option<String>,
-    pub variables: ArcRw<HashMap<String, WrappedValue>>,
+    pub variables: HashMap<String, WrappedValue>,
     pub queue: ArcRw<Vec<Operator>>,
     pub bpmn_process: Option<Arc<BpmnProcess>>,
 }
@@ -23,17 +23,17 @@ impl OperatorContext {
         Self {
             group_id: None,
             user_id: None,
-            variables: Arc::new(RwLock::new(HashMap::new())),
+            variables: HashMap::new(),
             queue: Arc::new(RwLock::new(Vec::<Operator>::new())),
             bpmn_process: None,
         }
     }
 
-    pub fn new(group_id: Option<String>, user_id: Option<String>, variables: Option<ArcRw<HashMap<String, WrappedValue>>>) -> Self {
+    pub fn new(group_id: Option<String>, user_id: Option<String>, variables: HashMap<String, WrappedValue>) -> Self {
         Self {
             group_id,
             user_id,
-            variables: variables.unwrap_or(Arc::new(RwLock::new(HashMap::new()))),
+            variables,
             queue: Arc::new(RwLock::new(Vec::<Operator>::new())),
             bpmn_process: None,
         }
@@ -60,8 +60,6 @@ impl OperatorContext {
 
         if let Some(terminate_varname) = tmp_terminate_varname {
             let terminate_value = self.variables
-                .read()
-                .expect("unexpected error")
                 .get(&terminate_varname)
                 .and_then(|v| Some(v.clone()));
             if let Some(WrappedValue::Bool(v)) = terminate_value {

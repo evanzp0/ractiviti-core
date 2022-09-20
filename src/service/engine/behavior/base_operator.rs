@@ -216,8 +216,8 @@ impl BaseOperator {
         Ok(current_execution)
     }
 
-    pub async fn create_or_update_variables<'a>(&self, variables: ArcRw<HashMap<String, WrappedValue>>, tran: &Transaction<'_>) -> Result<()> {
-        for (key, value) in variables.read().unwrap().iter() {
+    pub async fn create_or_update_variables(&self, variables: &mut HashMap<String, WrappedValue>, tran: &Transaction<'_>) -> Result<()> {
+        for (key, value) in variables.iter() {
             let mut dto = ApfRuVariableDto::default();
             dto.var_type = value.get_type();
             dto.value =  value.as_str();

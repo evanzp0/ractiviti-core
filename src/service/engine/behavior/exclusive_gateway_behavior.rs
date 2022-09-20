@@ -49,7 +49,7 @@ impl ExclusiveGatewayBehavior {
             let mut out_flow = None;
             for flow in out_flows {
                 if let Some(expr) = flow.get_condition_expr() {
-                    let js_global_vars = convert_map(data_map.clone());
+                    let js_global_vars = convert_map(&data_map);
                     let rst = run_script(expr, &js_global_vars);
                     match rst {
                         Ok(v) => {

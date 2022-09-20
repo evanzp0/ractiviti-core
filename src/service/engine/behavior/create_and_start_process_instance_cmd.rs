@@ -55,7 +55,7 @@ impl CreateAndStartProcessInstanceCmd {
 
         // create or update variables
         let base_operator = BaseOperator::new(proc_inst.clone(), None, start_event.clone(), None, None);
-        base_operator.create_or_update_variables(operator_ctx.variables.clone(), tran).await?;
+        base_operator.create_or_update_variables(&mut operator_ctx.variables, tran).await?;
 
         // continue to handle start event operator
         let continue_operator = ContinueProcessOperator::new(

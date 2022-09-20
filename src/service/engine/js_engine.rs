@@ -2,7 +2,6 @@ use std::{collections::HashMap};
 use boa::{JsValue, Context, JsString};
 use crate::{error::{AppError, ErrorCode}, model::WrappedValue};
 use color_eyre::Result;
-use crate::ArcRw;
 
 pub fn run_script(js_code: String, global_vars: &HashMap<String, JsValue>) -> Result<JsValue>{
 
@@ -34,10 +33,10 @@ pub fn run_script(js_code: String, global_vars: &HashMap<String, JsValue>) -> Re
     rst
 }
 
-pub fn convert_map(type_wrap_map: ArcRw<HashMap<String, WrappedValue>>) -> HashMap<String, JsValue> {
+pub fn convert_map(type_wrap_map: &HashMap<String, WrappedValue>) -> HashMap<String, JsValue> {
     let mut rst: HashMap<String, JsValue> = HashMap::new();
 
-    type_wrap_map.read().unwrap().iter().for_each(|(key, value)| {
+    type_wrap_map.iter().for_each(|(key, value)| {
         let v  = match value {
             WrappedValue::Str(v) => JsValue::String(JsString::new(v)),
             WrappedValue::Int(v) => JsValue::Integer(*v),

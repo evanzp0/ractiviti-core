@@ -7,7 +7,6 @@ use tokio_postgres::Transaction;
 use crate::common::db;
 use crate::service::engine::{CreateAndStartProcessInstanceCmd, Operator, OperatorContext, OperatorExecutor, ProcessEngine};
 use crate::model::{ApfRuExecution, WrappedValue};
-use crate::ArcRw;
 use crate::dao::ApfReProcdefDao;
 use crate::error::{AppError, ErrorCode};
 
@@ -26,7 +25,7 @@ impl RuntimeService {
         &self, 
         process_definition_key: &str,
         business_key: Option<String>,
-        variables: Option<ArcRw<HashMap<String, WrappedValue>>>,
+        variables: HashMap<String, WrappedValue>,
         user_id: Option<String>,
         group_id: Option<String>)
     -> Result<Arc<ApfRuExecution>> {
@@ -43,7 +42,7 @@ impl RuntimeService {
         Ok(rst)
     }
 
-    pub async fn _start_process_instance_by_key<'a>(
+    pub(crate) async fn _start_process_instance_by_key<'a>(
         &self, 
         process_definition_key: &str,
         business_key: Option<String>,
@@ -95,7 +94,7 @@ mod tests {
 
         let mut operator_ctx = OperatorContext::default();
         let var_1 = WrappedValue::Bool(true);
-        operator_ctx.variables.write().unwrap().insert("approval".to_owned(), var_1);
+        operator_ctx.variables.insert("approval".to_owned(), var_1);
         let rt_service = RuntimeService::new();
         let procinst = rt_service._start_process_instance_by_key(
             &procdef.key,
