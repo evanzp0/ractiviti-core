@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use color_eyre::Result;
 
-use crate::ArcRw;
 use crate::error::{AppError, ErrorCode};
 use crate::service::engine::{BpmnProcess, Operator};
 use crate::model::WrappedValue;
@@ -13,7 +12,7 @@ pub struct OperatorContext {
     pub group_id: Option<String>,
     pub user_id: Option<String>,
     pub variables: HashMap<String, WrappedValue>,
-    pub queue: ArcRw<Vec<Operator>>,
+    pub queue: Vec<Operator>,
     pub bpmn_process: Option<Arc<BpmnProcess>>,
 }
 
@@ -24,7 +23,7 @@ impl OperatorContext {
             group_id: None,
             user_id: None,
             variables: HashMap::new(),
-            queue: Arc::new(RwLock::new(Vec::<Operator>::new())),
+            queue: Vec::<Operator>::new(),
             bpmn_process: None,
         }
     }
@@ -34,7 +33,7 @@ impl OperatorContext {
             group_id,
             user_id,
             variables,
-            queue: Arc::new(RwLock::new(Vec::<Operator>::new())),
+            queue: Vec::<Operator>::new(),
             bpmn_process: None,
         }
     }

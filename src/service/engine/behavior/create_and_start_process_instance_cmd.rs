@@ -65,7 +65,7 @@ impl CreateAndStartProcessInstanceCmd {
             None,
             None);
 
-        operator_ctx.queue.write().unwrap().push(Operator::ContinueProcessOperator(continue_operator));
+        operator_ctx.queue.push(Operator::ContinueProcessOperator(continue_operator));
 
         let rst = OperateRst {
             process_instantce: Some(proc_inst)

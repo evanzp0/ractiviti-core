@@ -86,7 +86,7 @@ impl ExclusiveGatewayBehavior {
                 // continue to handle the outflow
                 let next_operator = TakeOutgoingFlowsOperator::new(
                     element, self.base.proc_inst.clone(), self.base.current_exec());
-                operator_ctx.queue.write().unwrap().push(Operator::TakeOutgoingFlowsOperator(next_operator));
+                operator_ctx.queue.push(Operator::TakeOutgoingFlowsOperator(next_operator));
             } else {
                 Err(
                     AppError::new(

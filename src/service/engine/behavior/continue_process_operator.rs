@@ -90,6 +90,6 @@ impl ContinueProcessOperator {
             self.base.element.clone(),
             self.base.proc_inst.clone(),
             self.base.current_exec());
-        operator_ctx.queue.write().unwrap().push(Operator::CreateTaskCmd(next_operator));
+        operator_ctx.queue.push(Operator::CreateTaskCmd(next_operator));
     }
 }

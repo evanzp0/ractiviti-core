@@ -56,7 +56,7 @@ impl CompleteTaskCmd {
                 self.base.proc_inst.clone(),
                 self.base.current_exec(),
                 None);
-            operator_ctx.queue.write().unwrap().push(Operator::ContinueProcessOperator(continue_operator));
+            operator_ctx.queue.push(Operator::ContinueProcessOperator(continue_operator));
         } else {
             self.base.continue_outflow(operator_ctx, tran).await?;
         }

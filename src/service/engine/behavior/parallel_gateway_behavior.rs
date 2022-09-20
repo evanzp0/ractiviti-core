@@ -120,7 +120,7 @@ impl ParallelGatewayBehavior {
 
             // continue to handle the outflow
             for next_operator in outgoing_operators {
-                operator_ctx.queue.write().unwrap().push(Operator::TakeOutgoingFlowsOperator(next_operator));
+                operator_ctx.queue.push(Operator::TakeOutgoingFlowsOperator(next_operator));
             }
         }
 

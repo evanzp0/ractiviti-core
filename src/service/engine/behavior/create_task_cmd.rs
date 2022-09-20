@@ -100,7 +100,7 @@ impl CreateTaskCmd {
                     Some(Arc::new(task))
                 );
 
-                operator_ctx.queue.write().unwrap().push(Operator::CompleteTaskCmd(continue_operator));
+                operator_ctx.queue.push(Operator::CompleteTaskCmd(continue_operator));
             }
         }
 

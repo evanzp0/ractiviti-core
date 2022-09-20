@@ -60,7 +60,7 @@ impl BaseOperator {
         Ok(current_exec)
     }
 
-    pub async fn continue_outflow(&self, operator_ctx: &OperatorContext, tran: &Transaction<'_>)
+    pub async fn continue_outflow(&self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>)
             -> Result<()> {
         match &self.element {
             BpmnElement::Edge(_) => {
@@ -149,7 +149,7 @@ impl BaseOperator {
 
     async fn _continue_outflow(
         &self, 
-        operator_ctx: &OperatorContext, 
+        operator_ctx: &mut OperatorContext, 
         out_flows: &Vec<Arc<dyn BpmnEdge>>, 
         tran: &Transaction<'_>
     ) -> Result<()> {
@@ -165,7 +165,7 @@ impl BaseOperator {
 
         // continue to handle the edge
         let next_operator = TakeOutgoingFlowsOperator::new(element, self.proc_inst.clone(), Some(current_exec));
-        operator_ctx.queue.write().unwrap().push(Operator::TakeOutgoingFlowsOperator(next_operator));
+        operator_ctx.queue.push(Operator::TakeOutgoingFlowsOperator(next_operator));
 
         Ok(())
     }

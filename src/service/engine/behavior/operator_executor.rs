@@ -15,8 +15,8 @@ impl OperatorExecutor {
     pub async fn run(&mut self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> {
         let mut rst = OperateRst::default();
 
-        while !operator_ctx.queue.read().unwrap().is_empty() {
-            let operator = operator_ctx.queue.write().unwrap().remove(0);
+        while !operator_ctx.queue.is_empty() {
+            let operator = operator_ctx.queue.remove(0);
             let procinst = operator.execute(operator_ctx, tran).await?;
 
             if procinst != OperateRst::default() {
@@ -29,7 +29,7 @@ impl OperatorExecutor {
 
     pub async fn execute(&mut self, operator: Operator, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> 
     {
-        operator_ctx.queue.write().unwrap().push(operator);
+        operator_ctx.queue.push(operator);
         let rst = self.run(operator_ctx, tran).await;
 
         rst

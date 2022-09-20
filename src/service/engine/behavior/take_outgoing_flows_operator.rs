@@ -21,7 +21,7 @@ impl TakeOutgoingFlowsOperator {
         }
     }
 
-    pub async fn execute<'a> (&self, operator_ctx: &OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> {
+    pub async fn execute<'a> (&self, operator_ctx: &mut OperatorContext, tran: &Transaction<'_>) -> Result<OperateRst> {
 
         match &self.base.element {
             BpmnElement::Edge(edge) => {
@@ -54,7 +54,7 @@ impl TakeOutgoingFlowsOperator {
                         None
                     );
 
-                    operator_ctx.queue.write().unwrap().push(Operator::ContinueProcessOperator(continue_operator));
+                    operator_ctx.queue.push(Operator::ContinueProcessOperator(continue_operator));
                 }
             },
             BpmnElement::Node(node) => {
