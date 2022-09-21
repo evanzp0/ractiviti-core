@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use color_eyre::Result;
-use log4rs::error;
-use xml_doc::Document;
+use log4rs_macros::error;
+use xml_doc_log4rs::Document;
 use crate::error::{AppError, ErrorCode};
 use super::{StartEvent, BpmnElement,
     BpmnProcess, EndEvent, UserTask,

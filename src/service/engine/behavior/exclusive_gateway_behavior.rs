@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use color_eyre::Result;
-use log4rs::{debug, error};
+use log4rs_macros::{debug, error};
 use tokio_postgres::Transaction;
 
 use crate::{RcRefCell, get_now};

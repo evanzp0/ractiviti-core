@@ -6,8 +6,9 @@ edition = "2021"
 [dependencies]
 regex = "1"
 log = "0.4"
-log4rs = {git = "ssh://git@github.com/evanzp0/log4rs.git"}
-xml-doc = { git = "ssh://git@github.com/evanzp0/xml-doc-log4rs.git" }
+log4rs = "1.1"
+log4rs-macros = "1.1"
+xml-doc-log4rs = "0.2"
 int-enum = "0.4"
 serde_yaml = "0.8"
 once_cell = "1.13"

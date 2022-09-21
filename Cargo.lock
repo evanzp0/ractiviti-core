@@ -665,7 +665,8 @@ checksum = "a94d21414c1f4a51209ad204c1776a3d0765002c76c6abcb602a6f09f1e881c7"
 [[package]]
 name = "log4rs"
 version = "1.1.1"
-source = "git+ssh://git@github.com/evanzp0/log4rs.git#db0bf8f287b9911243901282c987438b3768fba8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "893eaf59f4bef8e2e94302adf56385db445a0306b9823582b0b8d5a06d8822f3"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -676,7 +677,6 @@ dependencies = [
  "libc",
  "log",
  "log-mdc",
- "once_cell",
  "parking_lot",
  "serde",
  "serde-value",
@@ -686,6 +686,16 @@ dependencies = [
  "thread-id",
  "typemap",
  "winapi",
+]
+
+[[package]]
+name = "log4rs-macros"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26c8e39328426250154b5a64528b53a34647e62da637aff90385865379efc2dc"
+dependencies = [
+ "log4rs",
+ "once_cell",
 ]
 
 [[package]]
@@ -969,6 +979,7 @@ dependencies = [
  "int-enum",
  "log",
  "log4rs",
+ "log4rs-macros",
  "once_cell",
  "regex",
  "serde",
@@ -980,7 +991,7 @@ dependencies = [
  "tokio-postgres",
  "uuid",
  "validator",
- "xml-doc",
+ "xml-doc-log4rs",
 ]
 
 [[package]]
@@ -1726,13 +1737,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c811ca4a8c853ef420abd8592ba53ddbbac90410fab6903b3e79972a631f7680"
 
 [[package]]
-name = "xml-doc"
+name = "xml-doc-log4rs"
 version = "0.2.0"
-source = "git+ssh://git@github.com/evanzp0/xml-doc-log4rs.git#6fabfa471787e42dc5623c4330ff69e247ea9fce"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd95ca6ab3c91ec6512e5a9a026865f7de23e66a798bfdc8297fec6005427ca6"
 dependencies = [
  "encoding_rs",
  "log",
  "log4rs",
+ "log4rs-macros",
  "once_cell",
  "quick-xml",
 ]

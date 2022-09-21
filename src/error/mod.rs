@@ -103,7 +103,7 @@ impl Error for AppError {
 
 #[cfg(test)]
 mod tests {
-    use log4rs::debug;
+    use log4rs_macros::debug;
     use super::*;
 
     #[test]

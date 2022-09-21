@@ -103,7 +103,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_complete() {
-        log4rs::prepare_log();
+        log4rs_macros::prepare_log();
 
         let mut conn = db::get_connect().await.unwrap();
         let tran = conn.transaction().await.unwrap();

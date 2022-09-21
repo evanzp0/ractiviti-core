@@ -74,7 +74,7 @@ impl<'a> ApfReDeploymentDao<'a> {
 
 #[cfg(test)]
 mod tests {
-    use log4rs::debug;
+    use log4rs_macros::debug;
     use crate::common::db;
     use crate::model::NewApfGeBytearray;
     use super::*;

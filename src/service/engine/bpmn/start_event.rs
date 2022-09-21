@@ -32,7 +32,7 @@ impl StartEvent {
 
 #[cfg(test)]
 mod tests {
-    use log4rs::debug;
+    use log4rs_macros::debug;
     use crate::service::engine::{BpmnElement, BpmnManager, DeploymentBuilder};
 
     #[test]
