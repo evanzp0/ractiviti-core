@@ -35,7 +35,7 @@ pub struct Database {
 }
 
 #[allow(dead_code)]
-pub fn global() -> &'static Arc<Configure> {
+pub fn global_cfg() -> &'static Arc<Configure> {
     CONFIG.get_or_init(|| {
         let s = std::fs::read_to_string(&"config.yaml").unwrap();
         Arc::new(serde_yaml::from_str(&s).unwrap())

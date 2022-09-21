@@ -7,7 +7,7 @@ pub static DATABASE_POOL: OnceCell<Pool> = OnceCell::new();
 const DB_DEFAULT_MAX_CONNECTS: usize = 15;
 
 async fn init_db_pool(){
-    let db = &super::global().database;
+    let db = &super::global_cfg().database;
     let mut cfg = Config::new();
     cfg.host = db.host.clone();
     cfg.port = db.port.clone();
