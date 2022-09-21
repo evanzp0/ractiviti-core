@@ -7,6 +7,8 @@ use serde::Deserialize;
 
 pub use string_builder::*;
 
+pub static CONFIG: OnceCell<Arc<Configure>> = OnceCell::new();
+
 #[derive(Debug, Deserialize)]
 pub struct Configure {
     pub server: Server,
@@ -34,7 +36,6 @@ pub struct Database {
 
 #[allow(dead_code)]
 pub fn global() -> &'static Arc<Configure> {
-    static CONFIG: OnceCell<Arc<Configure>> = OnceCell::new();
     CONFIG.get_or_init(|| {
         let s = std::fs::read_to_string(&"config.yaml").unwrap();
         Arc::new(serde_yaml::from_str(&s).unwrap())

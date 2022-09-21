@@ -10,7 +10,4 @@ database:
   user: root
   password: 111111
   dbname: ractiviti
-log:
-  file: data/logs/ractiviti.log
-  level: debug
 profile: dev
