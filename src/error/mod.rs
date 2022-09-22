@@ -85,8 +85,8 @@ impl AppError {
 
 impl Display for AppError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "err_code: {}, msg: {}, location: {}, cause: {:?}",
-            self.code.int_value(), self.msg, self.location, self.child_err)
+        write!(f, "err_code: {:?}({}), msg: {}, location: {}, cause: {:?}",
+            self.code, self.code.int_value(), self.msg, self.location, self.child_err)
     }
 }
 
