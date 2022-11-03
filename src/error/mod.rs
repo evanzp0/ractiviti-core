@@ -12,6 +12,7 @@ pub enum ErrorCode {
     InvalidCredentials = 3001,
     NotAuthorized = 3002,
     NotFound = 4001,
+    SessionNotExist = 4002,
     FileSizeError = 5001,
     ParseError = 6001,
     UnexpectedError = 7001,
@@ -27,15 +28,16 @@ impl Serialize for ErrorCode {
 impl ErrorCode {
     pub fn default_message(&self) -> String {
         match self {
-            ErrorCode::InternalError => { "Inernal error".to_string() }
-            ErrorCode::InvalidInput => { "Invalid input".to_string() }
-            ErrorCode::NotSupportError => { "Not support".to_string() }
-            ErrorCode::InvalidCredentials => { "Invalid username or password provided".to_string() }
-            ErrorCode::NotAuthorized => { "Not authorized".to_string() }
-            ErrorCode::NotFound => { "Not found".to_string() }
-            ErrorCode::FileSizeError => { "File size error".to_string() }
-            ErrorCode::ParseError => { "Parse error".to_string() }
-            ErrorCode::UnexpectedError => { "Unexpected error".to_string() }
+            ErrorCode::InternalError => "Inernal error".to_string(),
+            ErrorCode::InvalidInput => "Invalid input".to_string(),
+            ErrorCode::NotSupportError => "Not support".to_string(),
+            ErrorCode::InvalidCredentials => "Invalid username or password provided".to_string(),
+            ErrorCode::NotAuthorized => "Not authorized".to_string(),
+            ErrorCode::SessionNotExist => "Session not exists".to_string(),
+            ErrorCode::NotFound => "Not found".to_string(),
+            ErrorCode::FileSizeError => "File size error".to_string(),
+            ErrorCode::ParseError => "Parse error".to_string(),
+            ErrorCode::UnexpectedError => "Unexpected error".to_string(),
         }
     }
 }
