@@ -1,11 +1,13 @@
 pub mod db;
 pub mod string_builder;
+pub mod utils;
 
 use std::sync::Arc;
 use once_cell::sync::OnceCell;
 use serde::Deserialize;
 
 pub use string_builder::*;
+pub use utils::*;
 
 pub static CONFIG: OnceCell<Arc<Configure>> = OnceCell::new();
 
