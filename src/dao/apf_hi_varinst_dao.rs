@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use color_eyre::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_postgres::Transaction;
@@ -26,7 +25,7 @@ impl<'a> ApfHiVarinstDao<'a> {
         }
     }
 
-    pub async fn create_by_variable(&self, variable: &ApfRuVariable, create_time: NaiveDateTime) -> Result<ApfHiVarinst> {
+    pub async fn create_by_variable(&self, variable: &ApfRuVariable, create_time: i64) -> Result<ApfHiVarinst> {
         let hi_new_var = NewApfHiVarinst {
             id: variable.id.clone(),
             var_type: variable.var_type.clone(),
@@ -104,7 +103,7 @@ impl<'a> ApfHiVarinstDao<'a> {
         Ok(rst)
     }
 
-    pub async fn create_or_update_by_variable(&self, variable: &ApfRuVariable, update_time: NaiveDateTime) -> Result<ApfHiVarinst> {
+    pub async fn create_or_update_by_variable(&self, variable: &ApfRuVariable, update_time: i64) -> Result<ApfHiVarinst> {
         let mut rst_hi_var = self.get_by_id(&variable.id).await;
         match &mut rst_hi_var {
             Ok(_) => {
@@ -127,7 +126,7 @@ impl<'a> ApfHiVarinstDao<'a> {
         Ok(hi_var)
     }
 
-    pub async fn update_by_variable(&self, variable: &ApfRuVariable, update_time: NaiveDateTime) -> Result<u64> {
+    pub async fn update_by_variable(&self, variable: &ApfRuVariable, update_time: i64) -> Result<u64> {
         let mut hi_var = self.get_by_id(&variable.id).await?;
         hi_var.var_type = variable.var_type.clone();
         hi_var.value = variable.value.clone();

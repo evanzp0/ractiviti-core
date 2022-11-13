@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use serde::Serialize;
 use crate::error::AppError;
 use color_eyre::Result;
@@ -19,7 +18,7 @@ pub struct ApfRuTask {
     pub business_key: Option<String>,
     pub description: Option<String>,
     pub start_user_id: Option<String>,
-    pub create_time: NaiveDateTime,
+    pub create_time: i64,
     pub suspension_state: i32,
     pub form_key: Option<String>,
 }
@@ -36,7 +35,7 @@ pub struct NewApfRuTask {
     pub business_key: Option<String>,
     pub description: Option<String>,
     pub start_user_id: Option<String>,
-    pub create_time: Option<NaiveDateTime>,
+    pub create_time: Option<i64>,
     pub suspension_state: i32,
     pub form_key: Option<String>,
 }

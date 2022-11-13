@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use color_eyre::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_postgres::Transaction;
@@ -69,9 +68,9 @@ impl<'a> ApfHiActinstDao<'a> {
         Ok(rst)
     }
 
-    pub async fn mark_end( &self, execution_id: &str, element_id: &str,end_time: NaiveDateTime, end_user_id: Option<String>) -> Result<u64> {
+    pub async fn mark_end( &self, execution_id: &str, element_id: &str,end_time: i64, end_user_id: Option<String>) -> Result<u64> {
         let hi_actinst = self.find_one_by_element_id(execution_id, element_id).await?;
-        let duration = (end_time - hi_actinst.start_time).num_milliseconds();
+        let duration = end_time - hi_actinst.start_time;
 
         let sql = r#"
             update apf_hi_actinst
@@ -150,10 +149,10 @@ impl<'a> ApfHiActinstDao<'a> {
 
 #[cfg(test)]
 pub mod tests {
-    use chrono::Local;
     use crate::common::db;
     use crate::dao::apf_ru_execution_dao::tests::create_test_procinst;
     use crate::dao::apf_ru_task_dao::tests::create_test_task;
+    use crate::get_now;
     use crate::service::engine::tests::create_test_deploy;
     use crate::model::{ApfRuExecution, ApfRuTask};
     use super::*;
@@ -197,7 +196,7 @@ pub mod tests {
     async fn create_test_hi_actinst(proc_inst: &ApfRuExecution, task: &ApfRuTask, tran: &Transaction<'_>)
             -> ApfHiActinst {
 
-        let now = Some(Local::now().naive_local());
+        let now = Some(get_now());
         let new_hi_actinst = NewApfHiActinst {
             rev: 1,
             proc_def_id: proc_inst.proc_def_id.clone(),

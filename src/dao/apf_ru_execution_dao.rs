@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use color_eyre::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_postgres::Transaction;
@@ -99,7 +98,7 @@ impl<'a> ApfRuExecutionDao<'a> {
         id: &str,
         element_id: &str,
         start_user: Option<String>,
-        start_time: NaiveDateTime
+        start_time: i64
     ) -> Result<u64> {
         let ru_exection = self.get_by_id(id).await?;
 

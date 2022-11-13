@@ -138,6 +138,7 @@ impl<'a> ApfReProcdefDao<'a> {
 mod tests{
     use crate::common::db;
     use crate::dao::ApfReDeploymentDao;
+    use crate::get_now;
     use crate::model::{NewApfGeBytearray, NewApfReDeployment, SuspensionState};
     use super::*;
 
@@ -153,6 +154,7 @@ mod tests{
             organization: None,
             deployer: None,
             new_bytearray: NewApfGeBytearray::new(),
+            deploy_time: get_now(),
         };
 
         let deployment1 = dpl_dao.create(&new_dpl1).await.unwrap();

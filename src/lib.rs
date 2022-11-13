@@ -1,5 +1,5 @@
 use std::{cell::RefCell, rc::Rc};
-use chrono::{Local, NaiveDateTime};
+use common::LocalTimeStamp;
 
 pub mod common;
 pub mod model;
@@ -9,8 +9,8 @@ pub mod service;
 
 pub type RcRefCell<T> = Rc<RefCell<T>>;
 
-pub fn get_now() -> NaiveDateTime {
-    Local::now().naive_local()
+pub fn get_now() -> i64 {
+    LocalTimeStamp::now().timestamp()
 }
 
 pub fn gen_id() -> String {

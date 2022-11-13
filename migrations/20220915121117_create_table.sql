@@ -24,7 +24,7 @@ CREATE TABLE apf_re_deployment (
     key VARCHAR(255) NULL,
     organization VARCHAR(255) NULL,
     deployer VARCHAR(255) NULL,
-    deploy_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    deploy_time BIGINT NOT NULL
 );
 
 CREATE TABLE apf_re_procdef (
@@ -58,7 +58,7 @@ CREATE TABLE apf_ru_execution (
     root_proc_inst_id VARCHAR(36) NULL,
     element_id VARCHAR(255) NULL,
     is_active INT DEFAULT 1,
-    start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    start_time BIGINT NOT NULL,
     start_user VARCHAR(255) NULL
 );
 
@@ -74,8 +74,8 @@ CREATE TABLE apf_hi_actinst (
     element_type VARCHAR(255) NULL,
     start_user_id VARCHAR(255) NULL,
     end_user_id VARCHAR(255) NULL,
-    start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    end_time TIMESTAMP NULL,
+    start_time BIGINT NOT NULL,
+    end_time BIGINT NULL,
     duration BIGINT NULL
 );
 CREATE INDEX apf_idx_hi_act_inst_start ON apf_hi_actinst (start_time);
@@ -89,8 +89,8 @@ CREATE TABLE apf_hi_procinst (
     proc_inst_id VARCHAR(36) NOT NULL,
     business_key VARCHAR(255) NULL,
     proc_def_id VARCHAR(36) NOT NULL,
-    start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    end_time TIMESTAMP NULL,
+    start_time BIGINT NOT NULL,
+    end_time BIGINT NULL,
     duration BIGINT NULL default 0,
     start_user VARCHAR(255) NULL,
     start_element_id VARCHAR(255) NULL,
@@ -113,7 +113,7 @@ CREATE TABLE apf_ru_task (
     business_key VARCHAR(255) NULL,
     description VARCHAR(4000) NULL,
     start_user_id VARCHAR(255) NULL,
-    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_time BIGINT NOT NULL,
     suspension_state INT NOT NULL DEFAULT 0,
     form_key VARCHAR(255) NULL
 );
@@ -135,8 +135,8 @@ CREATE TABLE apf_hi_taskinst (
     description VARCHAR(4000) NULL,
     start_user_id VARCHAR(255) NULL,
     end_user_id VARCHAR(255) NULL,
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP NULL,
+    start_time BIGINT NOT NULL,
+    end_time BIGINT NULL,
     duration BIGINT NULL,
     suspension_state INT NULL,
     form_key VARCHAR(255) NULL
@@ -166,8 +166,8 @@ CREATE TABLE apf_hi_varinst (
     proc_inst_id VARCHAR(36) NOT NULL,
     task_id VARCHAR(36) NULL,
     value VARCHAR(4000) NULL,
-    create_time TIMESTAMP NULL,
-    last_updated_time TIMESTAMP NULL
+    create_time BIGINT NULL,
+    last_updated_time BIGINT NULL
 );
 CREATE INDEX apf_idx_hi_procvar_proc_inst ON apf_hi_varinst (proc_inst_id);
 CREATE INDEX apf_idx_hi_procvar_name_type ON apf_hi_varinst (name, var_type);

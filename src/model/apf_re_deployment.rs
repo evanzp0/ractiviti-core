@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use tokio_pg_mapper_derive::PostgresMapper;
 use validator::Validate;
 use serde::{Serialize, Deserialize};
@@ -16,7 +15,7 @@ pub struct ApfReDeployment {
     pub key: Option<String>,
     pub organization: Option<String>,
     pub deployer: Option<String>,
-    pub deploy_time: Option<NaiveDateTime>,
+    pub deploy_time: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, Validate, Default)]
@@ -31,6 +30,7 @@ pub struct NewApfReDeployment {
     pub deployer: Option<String>,
     #[serde(skip_serializing)]
     pub new_bytearray: NewApfGeBytearray,
+    pub deploy_time: i64,
 }
 
 impl NewApfReDeployment {

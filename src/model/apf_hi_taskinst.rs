@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use serde::Serialize;
 use tokio_pg_mapper_derive::PostgresMapper;
 
@@ -18,8 +17,8 @@ pub struct ApfHiTaskinst {
     pub description: Option<String>,
     pub start_user_id: Option<String>,
     pub end_user_id: Option<String>,
-    pub start_time: NaiveDateTime,
-    pub end_time: Option<NaiveDateTime>,
+    pub start_time: i64,
+    pub end_time: Option<i64>,
     pub duration: Option<i64>,
     pub suspension_state: i32,
     pub form_key: Option<String>,
@@ -38,8 +37,8 @@ pub struct NewApfHiTaskinst {
     pub business_key: Option<String>,
     pub description: Option<String>,
     pub start_user_id: Option<String>,
-    pub start_time: NaiveDateTime,
-    pub end_time: Option<NaiveDateTime>,
+    pub start_time: i64,
+    pub end_time: Option<i64>,
     pub duration: Option<i64>,
     pub suspension_state: i32,
     pub form_key: Option<String>,

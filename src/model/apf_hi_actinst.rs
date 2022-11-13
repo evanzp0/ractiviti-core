@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use serde::Serialize;
 use tokio_pg_mapper_derive::PostgresMapper;
 
@@ -17,8 +16,8 @@ pub struct ApfHiActinst {
     pub element_type: Option<String>,
     pub start_user_id: Option<String>,
     pub end_user_id: Option<String>,
-    pub start_time: NaiveDateTime,
-    pub end_time: Option<NaiveDateTime>,
+    pub start_time: i64,
+    pub end_time: Option<i64>,
     pub duration: Option<i64>,
 }
 
@@ -33,7 +32,7 @@ pub struct NewApfHiActinst {
     pub element_name: Option<String>,
     pub element_type: Option<String>,
     pub start_user_id: Option<String>,
-    pub start_time: NaiveDateTime,
-    pub end_time: Option<NaiveDateTime>,
+    pub start_time: i64,
+    pub end_time: Option<i64>,
     pub duration: Option<i64>,
 }

@@ -85,6 +85,7 @@ mod tests {
 
     use crate::common::db;
     use crate::dao::ApfReDeploymentDao;
+    use crate::get_now;
     use crate::model::{NewApfReDeployment};
     use super::*;
 
@@ -131,6 +132,7 @@ mod tests {
             organization: None,
             deployer: None,
             new_bytearray: NewApfGeBytearray::new(),
+            deploy_time: get_now(),
         };
 
         let dao = ApfReDeploymentDao::new(tran);

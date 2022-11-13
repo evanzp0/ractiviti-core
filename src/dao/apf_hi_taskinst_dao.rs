@@ -1,9 +1,9 @@
+use crate::get_now;
 use crate::model::{ApfHiTaskinst, ApfRuTask, NewApfHiTaskinst};
 use color_eyre::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_postgres::Transaction;
 use crate::error::{AppError, ErrorCode};
-use crate::get_now;
 
 use super::{BaseDao, Dao};
 
@@ -97,7 +97,7 @@ impl<'a> ApfHiTaskinstDao<'a> {
     pub async fn mark_end(&self, task_id: &str, end_user_id: Option<String>) -> Result<u64> {
         let hi_task = self.get_by_id(task_id).await?;
         let end_time = get_now();
-        let duration = (end_time - hi_task.start_time).num_milliseconds();
+        let duration = end_time - hi_task.start_time;
 
         let sql = r#"
             update apf_hi_taskinst

@@ -44,9 +44,9 @@ impl<'a> ApfReDeploymentDao<'a> {
     pub async fn create(&self, obj: &NewApfReDeployment) -> Result<ApfReDeployment> {
         obj.validate()?;
         let sql = r#"insert into apf_re_deployment (
-                id, name, key, organization, deployer
+                id, name, key, organization, deployer, deploy_time
             ) values (
-                $1, $2, $3, $4, $5
+                $1, $2, $3, $4, $5, $6
             )
             returning *
         "#;
@@ -61,7 +61,8 @@ impl<'a> ApfReDeploymentDao<'a> {
                     &obj.name,
                     &obj.key,
                     &obj.organization,
-                    &obj.deployer
+                    &obj.deployer,
+                    &obj.deploy_time,
                 ]
             )
             .await?;
@@ -76,6 +77,7 @@ impl<'a> ApfReDeploymentDao<'a> {
 mod tests {
     use log4rs_macros::debug;
     use crate::common::db;
+    use crate::get_now;
     use crate::model::NewApfGeBytearray;
     use super::*;
 
@@ -108,7 +110,8 @@ mod tests {
             key: Some("key1".to_string()),
             organization: None,
             deployer: None,
-            new_bytearray: NewApfGeBytearray::new()
+            new_bytearray: NewApfGeBytearray::new(),
+            deploy_time: get_now(),
         };
 
         let dao = ApfReDeploymentDao::new(tran);

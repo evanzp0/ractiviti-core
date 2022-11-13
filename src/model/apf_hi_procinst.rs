@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use serde::Serialize;
 use tokio_pg_mapper_derive::PostgresMapper;
 
@@ -11,8 +10,8 @@ pub struct ApfHiProcinst {
     pub proc_inst_id: String,
     pub business_key: Option<String>,
     pub proc_def_id: String,
-    pub start_time: NaiveDateTime,
-    pub end_time: Option<NaiveDateTime>,
+    pub start_time: i64,
+    pub end_time: Option<i64>,
     pub duration: i64,
     pub start_user: Option<String>,
     pub start_element_id: Option<String>,
@@ -25,7 +24,7 @@ pub struct NewApfHiProcinst {
     pub proc_inst_id: String,
     pub business_key: Option<String>,
     pub proc_def_id: String,
-    pub start_time: NaiveDateTime,
+    pub start_time: i64,
     pub start_user: Option<String>,
     pub start_element_id: Option<String>,
 }

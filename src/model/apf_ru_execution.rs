@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use serde::Serialize;
 use color_eyre::Result;
 use crate::error::{AppError, ErrorCode};
@@ -17,7 +16,7 @@ pub struct ApfRuExecution {
     pub root_proc_inst_id: Option<String>,
     pub element_id: Option<String>,
     pub is_active: i32,
-    pub start_time: NaiveDateTime,
+    pub start_time: i64,
     pub start_user: Option<String>,
 }
 
@@ -60,6 +59,6 @@ pub struct NewApfRuExecution {
     pub root_proc_inst_id: Option<String>,
     pub element_id: Option<String>,
     pub is_active: i32,
-    pub start_time:NaiveDateTime,
+    pub start_time:i64,
     pub start_user: Option<String>,
 }

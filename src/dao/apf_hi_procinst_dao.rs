@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use color_eyre::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_postgres::Transaction;
@@ -58,9 +57,9 @@ impl<'a> ApfHiProcinstDao<'a> {
         Ok(rst)
     }
 
-    pub async fn mark_end(&self, id: &str, end_element_id: &str, end_time: NaiveDateTime) -> Result<u64> {
+    pub async fn mark_end(&self, id: &str, end_element_id: &str, end_time: i64) -> Result<u64> {
         let hi_procinst = self.get_by_id(id).await?;
-        let duration = (end_time - hi_procinst.start_time).num_milliseconds();
+        let duration = end_time - hi_procinst.start_time;
 
         let sql = r#"
             update apf_hi_procinst

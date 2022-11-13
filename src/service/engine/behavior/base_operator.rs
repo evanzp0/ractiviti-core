@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use chrono::NaiveDateTime;
 use tokio_postgres::Transaction;
 use color_eyre::Result;
 
@@ -121,7 +120,7 @@ impl BaseOperator {
         &self, 
         element_id: &str, 
         start_user: Option<String>, 
-        start_time: NaiveDateTime, 
+        start_time: i64, 
         tran: &Transaction<'_>
     ) -> Result<()> {
         let current_exec = self.current_excution_ex()?;
@@ -200,7 +199,7 @@ impl BaseOperator {
     pub async fn create_current_execution<'a>(
         &self, 
         element_id: &str, 
-        start_time: NaiveDateTime, 
+        start_time: i64, 
         start_user: Option<String>, 
         tran: &Transaction<'_>
     ) -> Result<RcRefCell<ApfRuExecution>> {
