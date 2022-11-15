@@ -1,1 +1,3 @@
-pub mod deployment;
+pub mod deployment_dto;
+
+pub use deployment_dto::*;
