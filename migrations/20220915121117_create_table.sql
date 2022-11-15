@@ -20,10 +20,10 @@ CREATE TABLE test (
 
 CREATE TABLE apf_re_deployment (
     id VARCHAR(36) NOT NULL PRIMARY KEY,
-    name VARCHAR(255) NULL,
-    key VARCHAR(255) NULL,
-    organization VARCHAR(255) NULL,
-    deployer VARCHAR(255) NULL,
+    name VARCHAR(255) NOT NULL,
+    key VARCHAR(255) NOT NULL,
+    organization VARCHAR(255) NOT NULL,
+    deployer VARCHAR(255) NOT NULL,
     deploy_time BIGINT NOT NULL
 );
 

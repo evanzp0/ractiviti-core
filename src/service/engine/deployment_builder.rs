@@ -22,16 +22,24 @@ impl DeploymentBuilder {
         }
     }
 
-    pub fn key(mut self, key: &str) -> Result<DeploymentBuilder> {
+    pub fn key(mut self, key: &str) -> DeploymentBuilder {
         self.new_deployment.key = Some(key.to_string());
-
-        Ok(self)
+        self
     }
 
-    pub fn name(mut self, name: &str) -> Result<DeploymentBuilder> {
+    pub fn name(mut self, name: &str) -> DeploymentBuilder {
         self.new_deployment.name = Some(name.to_string());
+        self
+    }
 
-        Ok(self)
+    pub fn deployer(mut self, deployer: &str) -> DeploymentBuilder {
+        self.new_deployment.deployer = Some(deployer.to_string());
+        self
+    }
+
+    pub fn organization(mut self, organization: &str) -> DeploymentBuilder {
+        self.new_deployment.organization = Some(organization.to_string());
+        self
     }
 
     pub fn add_file(mut self, path: &str) -> Result<DeploymentBuilder> {
@@ -121,8 +129,10 @@ pub mod tests {
     pub async fn create_test_deploy<'a>(file: &str, tran: &'a Transaction<'a>) -> ApfReProcdef {
         let builder = DeploymentBuilder::new();
         let deployment = builder.add_file(file).unwrap()
-            .name("test_deploy").unwrap()
-            .key("test_key").unwrap()
+            .name("test_deploy")
+            .key("test_key")
+            .deployer("test_user_1")
+            .organization("test_comp_1")
             ._deploy(tran)
             .await
             .unwrap();

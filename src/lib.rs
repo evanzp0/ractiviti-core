@@ -6,6 +6,7 @@ pub mod model;
 pub mod dao;
 pub mod error;
 pub mod service;
+pub mod dto;
 
 pub type RcRefCell<T> = Rc<RefCell<T>>;
 
