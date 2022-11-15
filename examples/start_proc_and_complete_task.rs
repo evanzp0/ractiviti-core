@@ -16,9 +16,12 @@ async fn test_deploy() {
     let repository_service = process_engine.get_repository_service();
     let deployment = repository_service.create_deployment_builder()
         .add_file("bpmn/process_2.bpmn.xml").unwrap()
-        .name("test_deploy_2").unwrap()
-        .key("delopy_biz_key_2").unwrap()
-        .deply().await
+        .name("test_deploy_2")
+        .key("delopy_biz_key_2")
+        .deployer("test_user_1")
+        .organization("test_comp_1")
+        .deply()
+        .await
         .unwrap();
 
     debug!(deployment)
