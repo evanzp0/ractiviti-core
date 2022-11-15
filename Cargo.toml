@@ -28,8 +28,8 @@ tokio-pg-mapper-derive = "0.2"
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 rust-crypto = "0.2"
 rand = "0.8"
-dysql = { version="0.7" }
-dysql-macro = { version="0.7", features = ["tokio-postgres"] }
+dysql = { path = "../dysql-project/dysql" }
+dysql-macro = { path = "../dysql-project/dysql-macro", features = ["tokio-postgres"] }
 ramhorns = "0.14"
 
 [dev-dependencies]

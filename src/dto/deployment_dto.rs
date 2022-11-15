@@ -1,7 +1,7 @@
 use ramhorns::Content;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize, Content)]
+#[derive(Debug, Deserialize, Content, Clone)]
 pub struct DeploymentDto {
     pub id: Option<String>,
     pub name: Option<String>,

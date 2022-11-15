@@ -1,9 +1,11 @@
 use color_eyre::Result;
+use dysql::{Pagination, PageDto};
+use dysql_macro::page;
 use tokio_pg_mapper::FromTokioPostgresRow;
 use validator::Validate;
 use tokio_postgres::Transaction;
 
-use crate::{model::{ApfReDeployment, NewApfReDeployment}, gen_id};
+use crate::{model::{ApfReDeployment, NewApfReDeployment}, gen_id, dto::DeploymentDto};
 use super::base_dao::{BaseDao, Dao};
 
 pub struct ApfReDeploymentDao<'a> {
@@ -71,6 +73,26 @@ impl<'a> ApfReDeploymentDao<'a> {
 
         Ok(rst)
     }
+
+    pub async fn query_by_page(&self, pg_dto: &PageDto<DeploymentDto>) -> Result<Pagination<ApfReDeployment>> {
+        let tran = self.tran();
+        let pg_deployment = page!(|pg_dto, tran| -> ApfReDeployment {
+            "SELECT id, name, key, organization, deployer, deploy_time 
+            FROM apf_re_deployment
+            WHERE 1 = 1
+            {{#data}}
+                {{#id}}and id = :data.id{{/id}}
+                {{#name}}and name like '%' || :data.name || '%'{{/name}}
+                {{#key}}and key = :data.key{{/key}}
+                {{#organization}}and organization = :data.organization{{/organization}}
+                {{#deployer}}and deployer = :data.deployer{{/deployer}}
+                {{#deploy_time_start}}and deploy_time >= :data.deploy_time_start{{/deploy_time_start}}
+                {{#deploy_time_end}}and deploy_time <= :data.deploy_time_end{{/deploy_time_end}}
+            {{/data}}"
+        })?;
+
+        Ok(pg_deployment)
+    }
 }
 
 #[cfg(test)]
@@ -99,6 +121,27 @@ mod tests {
         assert_eq!(deployment1, deployment2);
 
         debug!("{:?}", deployment2);
+
+        tran.rollback().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_query_by_page() {
+        let mut conn =  db::get_connect().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
+        let dao = ApfReDeploymentDao::new(&tran);
+        let d_dto = DeploymentDto {
+            id: Some("".to_owned()),
+            name: Some("".to_owned()),
+            key: Some("".to_owned()),
+            organization: Some("".to_owned()),
+            deployer: Some("".to_owned()),
+            deploy_time_start: Some(1),
+            deploy_time_end: Some(1),
+        };
+        let pg_dto = PageDto::new(2, 1, d_dto);
+        let rst = dao.query_by_page(&pg_dto).await.unwrap();
+        println!("{:?}", rst);
 
         tran.rollback().await.unwrap();
     }
