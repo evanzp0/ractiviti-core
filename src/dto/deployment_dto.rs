@@ -8,6 +8,6 @@ pub struct DeploymentDto {
     pub key: Option<String>,
     pub organization: Option<String>,
     pub deployer: Option<String>,
-    pub deploy_time_start: Option<i64>,
-    pub deploy_time_end: Option<i64>,
+    pub deploy_time_from: Option<i64>,
+    pub deploy_time_to: Option<i64>,
 }

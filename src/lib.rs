@@ -11,7 +11,7 @@ pub mod dto;
 pub type RcRefCell<T> = Rc<RefCell<T>>;
 
 pub fn get_now() -> i64 {
-    LocalTimeStamp::now().timestamp()
+    LocalTimeStamp::now().timestamp_millis()
 }
 
 pub fn gen_id() -> String {

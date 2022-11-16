@@ -86,8 +86,8 @@ impl<'a> ApfReDeploymentDao<'a> {
                 {{#key}}and key = :data.key{{/key}}
                 {{#organization}}and organization = :data.organization{{/organization}}
                 {{#deployer}}and deployer = :data.deployer{{/deployer}}
-                {{#deploy_time_start}}and deploy_time >= :data.deploy_time_start{{/deploy_time_start}}
-                {{#deploy_time_end}}and deploy_time <= :data.deploy_time_end{{/deploy_time_end}}
+                {{#deploy_time_from}}and deploy_time >= :data.deploy_time_from{{/deploy_time_from}}
+                {{#deploy_time_to}}and deploy_time <= :data.deploy_time_to{{/deploy_time_to}}
             {{/data}}"
         })?;
 
@@ -136,8 +136,8 @@ mod tests {
             key: Some("".to_owned()),
             organization: Some("".to_owned()),
             deployer: Some("".to_owned()),
-            deploy_time_start: Some(1),
-            deploy_time_end: Some(1),
+            deploy_time_from: Some(1),
+            deploy_time_to: Some(1),
         };
         let pg_dto = PageDto::new(2, 1, d_dto);
         let rst = dao.query_by_page(&pg_dto).await.unwrap();
