@@ -68,9 +68,15 @@ impl LocalTimeStamp {
     pub fn local_dt(&self) -> DateTime<Local> {
         let sec: i64 = self.nsecs / 1000;
         let nsec: u32 = (self.nsecs % 1000 * 1000000) as u32;
-        let ndt = NaiveDateTime::from_timestamp(sec, nsec);
+        let ndt = NaiveDateTime::from_timestamp_opt(sec, nsec).expect("Unexpected error");
         let dt: DateTime<Local> = DateTime::from_utc(ndt, self.tz);
         dt
+    }
+
+    pub fn add_days(&mut self, days: i32) -> &mut Self {
+        self.nsecs += (days as i64) * 24 * 60 * 60 * 1000;
+
+        self
     }
 }
 
