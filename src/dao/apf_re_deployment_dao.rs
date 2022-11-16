@@ -74,7 +74,7 @@ impl<'a> ApfReDeploymentDao<'a> {
         Ok(rst)
     }
 
-    pub async fn query_by_page(&self, pg_dto: &PageDto<DeploymentDto>) -> Result<Pagination<ApfReDeployment>> {
+    pub async fn query_by_page(&self, pg_dto: &mut PageDto<DeploymentDto>) -> Result<Pagination<ApfReDeployment>> {
         let tran = self.tran();
         let pg_deployment = page!(|pg_dto, tran| -> ApfReDeployment {
             "SELECT id, name, key, organization, deployer, deploy_time 
@@ -139,8 +139,8 @@ mod tests {
             deploy_time_from: Some(1),
             deploy_time_to: Some(1),
         };
-        let pg_dto = PageDto::new(2, 1, d_dto);
-        let rst = dao.query_by_page(&pg_dto).await.unwrap();
+        let mut pg_dto = PageDto::new(2, 1, d_dto);
+        let rst = dao.query_by_page(&mut pg_dto).await.unwrap();
         println!("{:?}", rst);
 
         tran.rollback().await.unwrap();

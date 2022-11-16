@@ -36,7 +36,7 @@ impl RepositoryService {
         Ok(bpmn_process)
     }
 
-    pub async fn query_deployment_by_page(&self, pg_dto: &PageDto<DeploymentDto>) -> Result<Pagination<ApfReDeployment>> {
+    pub async fn query_deployment_by_page(&self, pg_dto: &mut PageDto<DeploymentDto>) -> Result<Pagination<ApfReDeployment>> {
         let mut conn = db::get_connect().await?;
         let tran = conn.transaction().await?;
 
