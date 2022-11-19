@@ -388,7 +388,19 @@ checksum = "4f94fa09c2aeea5b8839e414b7b841bf429fd25b9c522116ac97ee87856d88b2"
 
 [[package]]
 name = "dysql"
-version = "0.8.5"
+version = "0.8.6"
+dependencies = [
+ "once_cell",
+ "ramhorns",
+ "rust-crypto",
+ "serde",
+]
+
+[[package]]
+name = "dysql"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88d6d0f3a2d80e0600a58ee3d72fbaddaca5d456cbc8c160822fdbdcfefc23ca"
 dependencies = [
  "once_cell",
  "ramhorns",
@@ -398,9 +410,9 @@ dependencies = [
 
 [[package]]
 name = "dysql-macro"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
- "dysql",
+ "dysql 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "once_cell",
  "proc-macro2",
  "quote",
@@ -1155,7 +1167,7 @@ dependencies = [
  "chrono",
  "color-eyre",
  "deadpool-postgres",
- "dysql",
+ "dysql 0.8.6",
  "dysql-macro",
  "eyre",
  "futures 0.3.25",

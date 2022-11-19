@@ -33,12 +33,12 @@ impl DeploymentBuilder {
     }
 
     pub fn deployer(mut self, deployer: &str) -> DeploymentBuilder {
-        self.new_deployment.deployer = Some(deployer.to_string());
+        self.new_deployment.deployer_id = Some(deployer.to_string());
         self
     }
 
     pub fn organization(mut self, organization: &str) -> DeploymentBuilder {
-        self.new_deployment.organization = Some(organization.to_string());
+        self.new_deployment.company_id = Some(organization.to_string());
         self
     }
 

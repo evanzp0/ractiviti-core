@@ -31,7 +31,7 @@ impl<'a> ApfReDeploymentDao<'a> {
 
     pub async fn get_by_id(&self, id: &str) -> Result<ApfReDeployment> {
         let sql = r#"
-            select id, name, key, organization, deployer, deploy_time 
+            select id, name, key, company_id, deployer_id, deploy_time 
             from apf_re_deployment
             where id = $1
         "#;
@@ -46,7 +46,7 @@ impl<'a> ApfReDeploymentDao<'a> {
     pub async fn create(&self, obj: &NewApfReDeployment) -> Result<ApfReDeployment> {
         obj.validate()?;
         let sql = r#"insert into apf_re_deployment (
-                id, name, key, organization, deployer, deploy_time
+                id, name, key, company_id, deployer_id, deploy_time
             ) values (
                 $1, $2, $3, $4, $5, $6
             )
@@ -62,8 +62,8 @@ impl<'a> ApfReDeploymentDao<'a> {
                     &new_id,
                     &obj.name,
                     &obj.key,
-                    &obj.organization,
-                    &obj.deployer,
+                    &obj.company_id,
+                    &obj.deployer_id,
                     &obj.deploy_time,
                 ]
             )
@@ -77,15 +77,15 @@ impl<'a> ApfReDeploymentDao<'a> {
     pub async fn query_by_page(&self, pg_dto: &mut PageDto<DeploymentDto>) -> Result<Pagination<ApfReDeployment>> {
         let tran = self.tran();
         let pg_deployment = page!(|pg_dto, tran| -> ApfReDeployment {
-            "SELECT id, name, key, organization, deployer, deploy_time 
+            "SELECT id, name, key, company_id, deployer_id, deploy_time 
             FROM apf_re_deployment
             WHERE 1 = 1
             {{#data}}
                 {{#id}}and id = :data.id{{/id}}
                 {{#name}}and name like '%' || :data.name || '%'{{/name}}
                 {{#key}}and key = :data.key{{/key}}
-                {{#organization}}and organization = :data.organization{{/organization}}
-                {{#deployer}}and deployer = :data.deployer{{/deployer}}
+                {{#company_id}}and company_id = :data.company_id{{/company_id}}
+                {{#deployer_id}}and deployer_id = :data.deployer_id{{/deployer_id}}
                 {{#deploy_time_from}}and deploy_time >= :data.deploy_time_from{{/deploy_time_from}}
                 {{#deploy_time_to}}and deploy_time <= :data.deploy_time_to{{/deploy_time_to}}
             {{/data}}"
@@ -134,8 +134,8 @@ mod tests {
             id: Some("".to_owned()),
             name: Some("".to_owned()),
             key: Some("".to_owned()),
-            organization: Some("".to_owned()),
-            deployer: Some("".to_owned()),
+            company_id: Some("".to_owned()),
+            deployer_id: Some("".to_owned()),
             deploy_time_from: Some(1),
             deploy_time_to: Some(1),
         };
@@ -151,8 +151,8 @@ mod tests {
         let obj = NewApfReDeployment {
             name: Some("test1".to_string()),
             key: Some("key1".to_string()),
-            organization: Some("test_comp_1".to_owned()),
-            deployer: Some("test_user_1".to_owned()),
+            company_id: Some("test_comp_1".to_owned()),
+            deployer_id: Some("test_user_1".to_owned()),
             new_bytearray: NewApfGeBytearray::new(),
             deploy_time: get_now(),
         };

@@ -22,8 +22,8 @@ CREATE TABLE apf_re_deployment (
     id VARCHAR(36) NOT NULL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     key VARCHAR(255) NOT NULL,
-    organization VARCHAR(255) NOT NULL,
-    deployer VARCHAR(255) NOT NULL,
+    company_id VARCHAR(255) NOT NULL,
+    deployer_id VARCHAR(255) NOT NULL,
     deploy_time BIGINT NOT NULL
 );
 
