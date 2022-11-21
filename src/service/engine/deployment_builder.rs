@@ -86,14 +86,14 @@ impl DeploymentBuilder {
         let mut conn = db::get_connect().await?;
         let tran = conn.transaction().await?;
 
-        let deployment = self._deploy(&tran).await?;
+        let deployment = self.deploy_with_tran(&tran).await?;
 
         tran.commit().await?;
 
         Ok(deployment)
     }
 
-    pub async fn _deploy<'a>(&mut self, tran: &'a Transaction<'a>) -> Result<ApfReDeployment> {
+    pub async fn deploy_with_tran<'a>(&mut self, tran: &'a Transaction<'a>) -> Result<ApfReDeployment> {
         let bpmn_xml = String::from_utf8(self.new_deployment.new_bytearray.bytes.clone()
                 .unwrap_or(Vec::new()))?;
 
@@ -153,7 +153,7 @@ pub mod tests {
             .key("test_key")
             .deployer_id("test_user_1")
             .company_id("test_comp_1")
-            ._deploy(tran)
+            .deploy_with_tran(tran)
             .await
             .unwrap();
 
