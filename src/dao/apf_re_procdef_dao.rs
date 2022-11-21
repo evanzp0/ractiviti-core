@@ -7,7 +7,8 @@ use super::{BaseDao, Dao};
 
 const SELECT_FROM: &str = "select id, rev, name, key, version, deployment_id, resource_name,
     description, suspension_state, deployer_id, company_id
-    from apf_re_procdef";
+    from apf_re_procdef
+    where is_deleted = 0";
 
 pub struct ApfReProcdefDao<'a> {
     base_dao: BaseDao<'a>
@@ -31,7 +32,7 @@ impl<'a> ApfReProcdefDao<'a> {
     }
     
     pub async fn get_by_id(&self, id: &str) -> Result<ApfReProcdef> {
-        let sql = format!("{} {}", SELECT_FROM, "where id = $1");
+        let sql = format!("{} {}", SELECT_FROM, "and id = $1");
 
         let stmt = self.tran().prepare(&sql).await?;
         let row = self.tran().query_one(&stmt, &[&id]).await?;
@@ -41,7 +42,7 @@ impl<'a> ApfReProcdefDao<'a> {
     }
 
     pub async fn get_by_deplyment_id(&self, deployment_id: &str) -> Result<ApfReProcdef> {
-        let sql = format!("{} {}", SELECT_FROM, "where deployment_id = $1");
+        let sql = format!("{} {}", SELECT_FROM, "and deployment_id = $1");
 
         let stmt = self.tran().prepare(&sql).await?;
         let row = self.tran().query_one(&stmt, &[&deployment_id]).await?;
@@ -51,7 +52,7 @@ impl<'a> ApfReProcdefDao<'a> {
     }
 
     pub async fn get_lastest_by_key(&self, key: &str) -> Result<ApfReProcdef> {
-        let where_sql = "where key = $1
+        let where_sql = "and key = $1
             and suspension_state = 0
             order by version desc
             limit 1";
@@ -69,7 +70,8 @@ impl<'a> ApfReProcdefDao<'a> {
         let sql = r#"
             select version 
             from apf_re_procdef 
-            where key = $1 
+            where is_deleted = 0
+            and key = $1 
             order by version desc limit 1
         "#;
         let stmt = self.tran().prepare(sql).await?;

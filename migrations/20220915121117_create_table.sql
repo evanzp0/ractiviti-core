@@ -35,6 +35,7 @@ CREATE TABLE apf_re_procdef (
     suspension_state INT DEFAULT 0,
     company_id VARCHAR(255) NOT NULL,
     deployer_id VARCHAR(255) NOT NULL,
+    is_deleted INT DEFAULT 0,
 
     unique (key, version)
 );
