@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use super::{BpmnNode, BpmnProcess};
 
-pub trait BpmnEdge : Debug {
+pub trait BpmnEdge : Debug + Send + Sync {
     fn get_id(&self) -> String;
 
     fn get_source(&self) -> String;

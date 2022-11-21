@@ -32,7 +32,7 @@ impl NodeType {
     }
 }
 
-pub trait BpmnNode : Debug {
+pub trait BpmnNode : Debug + Send + Sync {
     fn get_id(&self) -> String;
 
     fn get_node_type(&self) -> NodeType;

@@ -47,12 +47,13 @@ impl RepositoryService {
         Ok(pg_deployment)
     }
 
-    pub async fn create_procdef(bpmn_name: &str, deployer_id: &str, company_id: &str, bytes: Vec<u8>) -> Result<ApfReProcdef> {
+    pub async fn create_procdef(&self, bpmn_name: &str, deployer_id: &str, company_id: &str, bpmn_xml: &str) -> Result<ApfReProcdef> {
         let mut conn = db::get_connect().await?;
         let tran = conn.transaction().await?;
 
         let procdef_dao = ApfReProcdefDao::new(&tran);
         let procdef_key = md5(bpmn_name);
+        let bytes = bpmn_xml.as_bytes().to_vec();
         
         let lastest_procdef = procdef_dao.get_lastest_by_key(&procdef_key, company_id).await;
         if let Err(error) = lastest_procdef {
@@ -69,9 +70,9 @@ impl RepositoryService {
                     .deploy_with_tran(&tran)
                     .await?;
 
-                let procdef = procdef_dao.get_by_deplyment_id(&deployment.id).await;
+                let procdef = procdef_dao.get_by_deplyment_id(&deployment.id).await?;
 
-                return procdef;
+                return Ok(procdef);
             }
         }
 
