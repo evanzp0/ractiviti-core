@@ -5,7 +5,7 @@ use tokio_postgres::Transaction;
 use crate::common::db;
 use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao};
 use crate::dto::DeploymentDto;
-use crate::model::ApfReDeployment;
+use crate::model::{ApfReDeployment, NewApfReProcdef, ApfReProcdef};
 use crate::service::engine::{BpmnManager, BpmnProcess};
 use super::DeploymentBuilder;
 
@@ -44,6 +44,11 @@ impl RepositoryService {
         let pg_deployment = deployment_dao.query_by_page(pg_dto).await?;
 
         Ok(pg_deployment)
+    }
+
+    pub async fn create_proc_def(new_proc_def: &NewApfReProcdef) -> Result<ApfReProcdef> {
+        
+        todo!()
     }
 }
 
