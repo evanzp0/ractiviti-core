@@ -42,6 +42,24 @@ impl DeploymentBuilder {
         self
     }
 
+    pub fn new_bytearray(mut self, bytes: Vec<u8>) ->  Result<DeploymentBuilder> {
+
+        if bytes.len() > 1024 * 1024 * 2 {
+            Err(AppError::new(ErrorCode::InternalError, Some("文件大小不能超过 2M "), concat!(file!(), ":", line!()), None))?;
+        } else if bytes.len() == 0 {
+            Err(AppError::new(ErrorCode::InternalError, Some("文件大小不能为 0 "), concat!(file!(), ":", line!()), None))?;
+        }
+
+        let mut new_bytearray = NewApfGeBytearray::new();
+        new_bytearray.bytes = Some(bytes);
+            let mut byte_array = NewApfGeBytearray::new();
+        byte_array.name = None;
+        self.new_deployment.new_bytearray = new_bytearray;
+        
+        Ok(self)
+    }
+
+
     pub fn add_file(mut self, path: &str) -> Result<DeploymentBuilder> {
         let f = File::open(path)?;
         let meta = f.metadata()?;
