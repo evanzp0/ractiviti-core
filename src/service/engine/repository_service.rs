@@ -67,10 +67,11 @@ impl RepositoryService {
                     .company_id(company_id)
                     .bytes(bytes)?
                     .deploy_with_tran(&tran)
-                    .await
-                    .unwrap();
+                    .await?;
 
-                    todo!()
+                let procdef = procdef_dao.get_by_deplyment_id(&deployment.id).await;
+
+                return procdef;
             }
         }
 
