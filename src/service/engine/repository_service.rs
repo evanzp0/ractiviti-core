@@ -64,6 +64,7 @@ impl RepositoryService {
                 let builder = DeploymentBuilder::new();
                 let deployment = builder
                     .name(bpmn_name)
+                    .key(&procdef_key)
                     .deployer_id(deployer_id)
                     .company_id(company_id)
                     .bytes(bytes)?
@@ -71,11 +72,13 @@ impl RepositoryService {
                     .await?;
 
                 let procdef = procdef_dao.get_by_deplyment_id(&deployment.id).await?;
+                tran.commit().await?;
 
                 return Ok(procdef);
             }
         }
 
+        tran.rollback().await?;
         Err(AppError::new(ErrorCode::ResourceExist, Some("流程名称已存在无法创建"), concat!(file!(), ":", line!()), None))?
     } 
 }

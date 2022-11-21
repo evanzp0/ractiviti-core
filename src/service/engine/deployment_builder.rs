@@ -23,7 +23,7 @@ impl DeploymentBuilder {
     }
 
     pub fn key(mut self, key: &str) -> DeploymentBuilder {
-        self.new_deployment.key = Some(key.to_string());
+        self.new_deployment.key =key.to_string();
         self
     }
 
@@ -113,7 +113,7 @@ impl DeploymentBuilder {
 
         // create proc_def
         let new_procdef = NewApfReProcdef {
-            key: bpmn_proc.id.clone(),
+            key: self.new_deployment.key.clone(),
             name: self.new_deployment.name.clone(),
             deployment_id: deployment.id.clone(),
             suspension_state: SuspensionState::FALSE,

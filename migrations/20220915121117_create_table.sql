@@ -26,7 +26,7 @@ CREATE TABLE apf_re_deployment (
 CREATE TABLE apf_re_procdef (
     id VARCHAR(255) NOT NULL PRIMARY KEY,
     rev INT DEFAULT NULL,
-    name VARCHAR(255) NULL,
+    name VARCHAR(255) NOT NULL,
     key VARCHAR(255)  NOT NULL,
     version INT NOT NULL DEFAULT 1,
     deployment_id VARCHAR(255) NOT NULL REFERENCES apf_re_deployment(id),
