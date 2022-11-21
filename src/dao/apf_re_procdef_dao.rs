@@ -178,7 +178,7 @@ mod tests{
         let dpl_dao = ApfReDeploymentDao::new(&tran);
         let new_dpl1 = NewApfReDeployment {
             name: "test1".to_string(),
-            key: Some("key1".to_string()),
+            key: "key1".to_string(),
             company_id: "test_comp_1".to_owned(),
             deployer_id: "test_user_1".to_owned(),
             new_bytearray: NewApfGeBytearray::new(),

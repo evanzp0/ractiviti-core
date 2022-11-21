@@ -6,17 +6,17 @@ use serde::{Serialize, Serializer};
 #[repr(u16)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, IntEnum)]
 pub enum ErrorCode {
-    InternalError = 1001,
-    InvalidInput = 2001,
-    NotSupportError = 2002,
-    ResourceExist = 2003,
-    InvalidCredentials = 3001,
-    NotAuthorized = 3002,
-    NotFound = 4001,
-    SessionNotExist = 4002,
-    FileSizeError = 5001,
-    ParseError = 6001,
-    UnexpectedError = 7001,
+    InvalidCredentials = 401_01,
+    NotAuthorized = 401_02,
+    NotFound = 404_01,
+    InternalError = 500_01,
+    UnexpectedError = 500_02,
+    InvalidInput = 501_01,
+    NotSupportError = 501_02,
+    ResourceExist = 501_03,
+    SessionNotExist = 501_04,
+    FileSizeError = 501_05,
+    ParseError = 501_06,
 }
 
 impl Serialize for ErrorCode {
