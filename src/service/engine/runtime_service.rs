@@ -25,6 +25,7 @@ impl RuntimeService {
     pub async fn start_process_instance_by_key<'a>(
         &self, 
         process_definition_key: &str,
+        company_id: &str,
         business_key: Option<String>,
         variables: HashMap<String, WrappedValue>,
         user_id: Option<String>,
@@ -36,7 +37,7 @@ impl RuntimeService {
         let mut operator_ctx = OperatorContext::new(group_id, user_id, variables);
 
         let rst = self._start_process_instance_by_key(
-            process_definition_key, business_key, &mut operator_ctx, &tran).await?;
+            process_definition_key, company_id, business_key, &mut operator_ctx, &tran).await?;
 
         tran.commit().await?;
 
@@ -46,12 +47,13 @@ impl RuntimeService {
     pub(crate) async fn _start_process_instance_by_key<'a>(
         &self, 
         process_definition_key: &str,
+        company_id: &str,
         business_key: Option<String>,
         operator_ctx: &mut OperatorContext,
         tran: &Transaction<'_>)
     -> Result<Rc<ApfRuExecution>>  {
         let procdef_dao = ApfReProcdefDao::new(tran);
-        let re_def = procdef_dao.get_lastest_by_key(process_definition_key).await?;
+        let re_def = procdef_dao.get_lastest_by_key(process_definition_key, company_id).await?;
 
         let repository_service = ProcessEngine::new(ProcessEngine::DEFAULT_ENGINE).get_repository_service();
         let bpmn_process = repository_service.load_bpmn_by_deployment(&re_def.deployment_id, tran).await?;
@@ -99,6 +101,7 @@ mod tests {
         let rt_service = RuntimeService::new();
         let procinst = rt_service._start_process_instance_by_key(
             &procdef.key,
+            &procdef.company_id,
             Some("process_biz_key".to_owned()),
             &mut operator_ctx,
             &tran

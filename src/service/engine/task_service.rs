@@ -114,6 +114,7 @@ mod tests {
         let procinst = rt_service
             ._start_process_instance_by_key(
                 &procdef.key,
+                &procdef.company_id,
                 Some("process_biz_key_2".to_owned()),
                 &mut operator_ctx,
                 &tran

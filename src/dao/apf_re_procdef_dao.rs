@@ -52,8 +52,9 @@ impl<'a> ApfReProcdefDao<'a> {
         Ok(rst)
     }
 
-    pub async fn get_lastest_by_key(&self, key: &str) -> Result<ApfReProcdef> {
+    pub async fn get_lastest_by_key(&self, key: &str, company_id: &str) -> Result<ApfReProcdef> {
         let where_sql = "and key = $1
+            and company_id = $2
             and suspension_state = 0
             order by version desc
             limit 1";
@@ -61,9 +62,20 @@ impl<'a> ApfReProcdefDao<'a> {
         let sql = format!("{} {}", SELECT_FROM, where_sql);
 
         let stmt = self.tran().prepare(&sql).await?;
-        let row = self.tran().query(&stmt, &[&key]).await?;
-        let rst = ApfReProcdef::from_row_ref(&row[0])?;
+        let rows = self.tran().query(&stmt, &[&key, &company_id]).await?;
 
+        if rows.len() == 0 {
+            Err(
+                AppError::new(
+                    ErrorCode::NotFound, 
+                    Some(&format!("apf_re_procdef(key:{}, company_id:{}) is not exist", key, company_id)), 
+                    concat!(file!(), ":", line!()), 
+                    None
+                )
+            )?
+        }
+
+        let rst = ApfReProcdef::from_row_ref(&rows[0])?;
         Ok(rst)
     }
 
@@ -165,7 +177,7 @@ mod tests{
 
         let dpl_dao = ApfReDeploymentDao::new(&tran);
         let new_dpl1 = NewApfReDeployment {
-            name: Some("test1".to_string()),
+            name: "test1".to_string(),
             key: Some("key1".to_string()),
             company_id: "test_comp_1".to_owned(),
             deployer_id: "test_user_1".to_owned(),
@@ -177,7 +189,7 @@ mod tests{
 
         let prcdef_dao = ApfReProcdefDao::new(&tran);
         let new_prcdef1 = NewApfReProcdef {
-            name: Some("test1".to_string()),
+            name: "test1".to_string(),
             key: "test1_key".to_string(),
             deployment_id: deployment1.id,
             resource_name: None,
@@ -193,7 +205,7 @@ mod tests{
 
         let deployment2 = dpl_dao.create(&new_dpl1).await.unwrap();
         let new_prcdef2 = NewApfReProcdef {
-            name: Some("test1".to_string()),
+            name: "test1".to_string(),
             key: "test1_key".to_string(),
             deployment_id: deployment2.id,
             resource_name: None,
@@ -204,7 +216,7 @@ mod tests{
         };
 
         let procdef3 = prcdef_dao.create(&new_prcdef2).await.unwrap();
-        let procdef4 = prcdef_dao.get_lastest_by_key(&procdef1.key).await.unwrap();
+        let procdef4 = prcdef_dao.get_lastest_by_key(&procdef1.key, &procdef1.company_id).await.unwrap();
         assert_eq!(procdef3, procdef4);
         assert_ne!(procdef1, procdef4);
         assert!(procdef2.version < procdef4.version);

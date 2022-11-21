@@ -21,7 +21,7 @@ pub struct ApfReDeployment {
 #[derive(Debug, Deserialize, Validate, Default)]
 pub struct NewApfReDeployment {
     #[validate(length(max = 255, message = "name must be less than 255 chars."))]
-    pub name: Option<String>,
+    pub name: String,
     #[validate(length(max = 255, message = "key must be less than 255 chars."))]
     pub key: Option<String>,
     #[validate(length(max = 255, message = "organization must be less than 255 chars."))]

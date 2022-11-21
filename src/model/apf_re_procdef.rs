@@ -30,7 +30,7 @@ impl SuspensionState {
 
 #[derive(Debug, Deserialize, Validate, Default)]
 pub struct NewApfReProcdef {
-    pub name: Option<String>,
+    pub name: String,
     pub key: String,
     pub deployment_id: String,
     pub resource_name: Option<String>,

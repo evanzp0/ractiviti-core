@@ -28,7 +28,7 @@ impl DeploymentBuilder {
     }
 
     pub fn name(mut self, name: &str) -> DeploymentBuilder {
-        self.new_deployment.name = Some(name.to_string());
+        self.new_deployment.name =name.to_string();
         self
     }
 
@@ -42,7 +42,7 @@ impl DeploymentBuilder {
         self
     }
 
-    pub fn new_bytearray(mut self, bytes: Vec<u8>) ->  Result<DeploymentBuilder> {
+    pub fn bytes(mut self, bytes: Vec<u8>) ->  Result<DeploymentBuilder> {
 
         if bytes.len() > 1024 * 1024 * 2 {
             Err(AppError::new(ErrorCode::InternalError, Some("文件大小不能超过 2M "), concat!(file!(), ":", line!()), None))?;
@@ -114,7 +114,7 @@ impl DeploymentBuilder {
         // create proc_def
         let new_procdef = NewApfReProcdef {
             key: bpmn_proc.id.clone(),
-            name: bpmn_proc.name.clone(),
+            name: self.new_deployment.name.clone(),
             deployment_id: deployment.id.clone(),
             suspension_state: SuspensionState::FALSE,
             resource_name: _bytearray.name.clone(),

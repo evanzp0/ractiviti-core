@@ -2,10 +2,11 @@ use color_eyre::Result;
 use dysql::{PageDto, Pagination};
 use tokio_postgres::Transaction;
 
-use crate::common::db;
-use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao};
+use crate::common::{db, md5};
+use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao, ApfReProcdefDao};
 use crate::dto::DeploymentDto;
-use crate::model::{ApfReDeployment, NewApfReProcdef, ApfReProcdef};
+use crate::error::{AppError, ErrorCode};
+use crate::model::{ApfReDeployment, ApfReProcdef};
 use crate::service::engine::{BpmnManager, BpmnProcess};
 use super::DeploymentBuilder;
 
@@ -46,10 +47,35 @@ impl RepositoryService {
         Ok(pg_deployment)
     }
 
-    pub async fn create_proc_def(new_proc_def: &NewApfReProcdef) -> Result<ApfReProcdef> {
+    pub async fn create_procdef(bpmn_name: &str, deployer_id: &str, company_id: &str, bytes: Vec<u8>) -> Result<ApfReProcdef> {
+        let mut conn = db::get_connect().await?;
+        let tran = conn.transaction().await?;
+
+        let procdef_dao = ApfReProcdefDao::new(&tran);
+        let procdef_key = md5(bpmn_name);
         
-        todo!()
-    }
+        let lastest_procdef = procdef_dao.get_lastest_by_key(&procdef_key, company_id).await;
+        if let Err(error) = lastest_procdef {
+            let err = error.downcast_ref::<AppError>()
+                .ok_or(AppError::internal_error(&format!("{} : {} , {}", file!(), line!(), error.to_string())))?; 
+
+            if ErrorCode::NotFound == err.code {
+                let builder = DeploymentBuilder::new();
+                let deployment = builder
+                    .name(bpmn_name)
+                    .deployer_id(deployer_id)
+                    .company_id(company_id)
+                    .bytes(bytes)?
+                    .deploy_with_tran(&tran)
+                    .await
+                    .unwrap();
+
+                    todo!()
+            }
+        }
+
+        Err(AppError::new(ErrorCode::ResourceExist, Some("流程名称已存在无法创建"), concat!(file!(), ":", line!()), None))?
+    } 
 }
 
 #[cfg(test)]
