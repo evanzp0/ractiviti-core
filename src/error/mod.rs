@@ -47,6 +47,7 @@ impl ErrorCode {
 #[derive(Debug, Serialize)]
 pub struct AppError {
     pub code: ErrorCode,
+    pub field: Option<String>,
     pub msg: String,
     #[serde(skip_serializing)]
     pub location: String,
@@ -68,6 +69,7 @@ impl AppError {
 
         Self {
             code,
+            field: None,
             msg: message,
             location: location.to_owned(),
             child_err: source,
