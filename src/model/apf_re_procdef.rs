@@ -8,7 +8,7 @@ use tokio_pg_mapper_derive::PostgresMapper;
 pub struct ApfReProcdef {
     pub id: String,
     pub rev: i32,
-    pub name:  Option<String>,
+    pub name:  String,
     pub key: String, // key = md5(self.name)
     pub version: i32,
     pub deployment_id: String,
