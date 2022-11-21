@@ -32,13 +32,13 @@ impl DeploymentBuilder {
         self
     }
 
-    pub fn deployer(mut self, deployer: &str) -> DeploymentBuilder {
-        self.new_deployment.deployer_id = Some(deployer.to_string());
+    pub fn deployer_id(mut self, deployer_id: &str) -> DeploymentBuilder {
+        self.new_deployment.deployer_id = deployer_id.to_string();
         self
     }
 
-    pub fn organization(mut self, organization: &str) -> DeploymentBuilder {
-        self.new_deployment.company_id = Some(organization.to_string());
+    pub fn company_id(mut self, company_id: &str) -> DeploymentBuilder {
+        self.new_deployment.company_id = company_id.to_string();
         self
     }
 
@@ -101,6 +101,8 @@ impl DeploymentBuilder {
             suspension_state: SuspensionState::FALSE,
             resource_name: _bytearray.name.clone(),
             description: bpmn_proc.description.clone(),
+            deployer_id: self.new_deployment.deployer_id.clone(),
+            company_id: self.new_deployment.company_id.clone(),
         };
 
         let procdef_dao = ApfReProcdefDao::new(tran);
@@ -131,8 +133,8 @@ pub mod tests {
         let deployment = builder.add_file(file).unwrap()
             .name("test_deploy")
             .key("test_key")
-            .deployer("test_user_1")
-            .organization("test_comp_1")
+            .deployer_id("test_user_1")
+            .company_id("test_comp_1")
             ._deploy(tran)
             .await
             .unwrap();

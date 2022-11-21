@@ -5,6 +5,10 @@ use tokio_postgres::Transaction;
 use crate::{model::{ApfReProcdef, NewApfReProcdef}, gen_id, error::{AppError, ErrorCode}};
 use super::{BaseDao, Dao};
 
+const SELECT_FROM: &str = "select id, rev, name, key, version, deployment_id, resource_name,
+    description, suspension_state, deployer_id, company_id
+    from apf_re_procdef";
+
 pub struct ApfReProcdefDao<'a> {
     base_dao: BaseDao<'a>
 }
@@ -27,14 +31,9 @@ impl<'a> ApfReProcdefDao<'a> {
     }
     
     pub async fn get_by_id(&self, id: &str) -> Result<ApfReProcdef> {
-        let sql = r#"
-            select id, rev, name, key, version, deployment_id, resource_name,
-                description, suspension_state
-            from apf_re_procdef
-            where id = $1 
-        "#;
+        let sql = format!("{} {}", SELECT_FROM, "where id = $1");
 
-        let stmt = self.tran().prepare(sql).await?;
+        let stmt = self.tran().prepare(&sql).await?;
         let row = self.tran().query_one(&stmt, &[&id]).await?;
         let rst = ApfReProcdef::from_row(row)?;
 
@@ -42,14 +41,9 @@ impl<'a> ApfReProcdefDao<'a> {
     }
 
     pub async fn get_by_deplyment_id(&self, deployment_id: &str) -> Result<ApfReProcdef> {
-        let sql = r#"
-            select id, rev, name, key, version, deployment_id, resource_name,
-                description, suspension_state
-            from apf_re_procdef
-            where deployment_id = $1 
-        "#;
+        let sql = format!("{} {}", SELECT_FROM, "where deployment_id = $1");
 
-        let stmt = self.tran().prepare(sql).await?;
+        let stmt = self.tran().prepare(&sql).await?;
         let row = self.tran().query_one(&stmt, &[&deployment_id]).await?;
         let rst = ApfReProcdef::from_row(row)?;
 
@@ -57,17 +51,14 @@ impl<'a> ApfReProcdefDao<'a> {
     }
 
     pub async fn get_lastest_by_key(&self, key: &str) -> Result<ApfReProcdef> {
-        let sql = r#"
-            select id, rev, name, key, version, 
-                deployment_id, resource_name, description, suspension_state
-            from apf_re_procdef
-            where key = $1
-                and suspension_state = 0
+        let where_sql = "where key = $1
+            and suspension_state = 0
             order by version desc
-            limit 1
-        "#;
+            limit 1";
 
-        let stmt = self.tran().prepare(sql).await?;
+        let sql = format!("{} {}", SELECT_FROM, where_sql);
+
+        let stmt = self.tran().prepare(&sql).await?;
         let row = self.tran().query(&stmt, &[&key]).await?;
         let rst = ApfReProcdef::from_row_ref(&row[0])?;
 
@@ -101,10 +92,12 @@ impl<'a> ApfReProcdefDao<'a> {
         let sql = r#"
             insert into apf_re_procdef (
                 name, rev, key, version, deployment_id, 
-                resource_name, description, suspension_state, id
+                resource_name, description, suspension_state, id, deployer_id, 
+                company_id
             ) values (
                 $1, $2, $3, $4, $5, 
-                $6, $7, $8, $9
+                $6, $7, $8, $9, $10, 
+                $11
             )
             returning *
         "#;
@@ -125,6 +118,8 @@ impl<'a> ApfReProcdefDao<'a> {
                     &obj.description,
                     &obj.suspension_state,
                     &new_id,
+                    &obj.deployer_id,
+                    &obj.company_id,
                 ]
             )
             .await?;
@@ -151,8 +146,8 @@ mod tests{
         let new_dpl1 = NewApfReDeployment {
             name: Some("test1".to_string()),
             key: Some("key1".to_string()),
-            company_id: Some("test_comp_1".to_owned()),
-            deployer_id: Some("test_user_1".to_owned()),
+            company_id: "test_comp_1".to_owned(),
+            deployer_id: "test_user_1".to_owned(),
             new_bytearray: NewApfGeBytearray::new(),
             deploy_time: get_now(),
         };
@@ -166,7 +161,9 @@ mod tests{
             deployment_id: deployment1.id,
             resource_name: None,
             description: None,
-            suspension_state: SuspensionState::FALSE
+            suspension_state: SuspensionState::FALSE,
+            deployer_id: "test_user1".to_owned(),
+            company_id: "test_comp1".to_owned(),
         };
 
         let procdef1 = prcdef_dao.create(&new_prcdef1).await.unwrap();
@@ -180,7 +177,9 @@ mod tests{
             deployment_id: deployment2.id,
             resource_name: None,
             description: None,
-            suspension_state: SuspensionState::FALSE
+            suspension_state: SuspensionState::FALSE,
+            deployer_id: "test_user1".to_owned(),
+            company_id: "test_comp1".to_owned(),
         };
 
         let procdef3 = prcdef_dao.create(&new_prcdef2).await.unwrap();

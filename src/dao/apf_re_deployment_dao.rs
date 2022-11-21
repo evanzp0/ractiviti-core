@@ -151,8 +151,8 @@ mod tests {
         let obj = NewApfReDeployment {
             name: Some("test1".to_string()),
             key: Some("key1".to_string()),
-            company_id: Some("test_comp_1".to_owned()),
-            deployer_id: Some("test_user_1".to_owned()),
+            company_id: "test_comp_1".to_owned(),
+            deployer_id: "test_user_1".to_owned(),
             new_bytearray: NewApfGeBytearray::new(),
             deploy_time: get_now(),
         };

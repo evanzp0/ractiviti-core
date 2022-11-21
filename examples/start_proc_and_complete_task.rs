@@ -18,8 +18,8 @@ async fn test_deploy() {
         .add_file("bpmn/process_2.bpmn.xml").unwrap()
         .name("test_deploy_2")
         .key("delopy_biz_key_2")
-        .deployer("test_user_1")
-        .organization("test_comp_1")
+        .deployer_id("test_user_1")
+        .company_id("test_comp_1")
         .deply()
         .await
         .unwrap();

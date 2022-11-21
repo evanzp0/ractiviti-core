@@ -25,9 +25,9 @@ pub struct NewApfReDeployment {
     #[validate(length(max = 255, message = "key must be less than 255 chars."))]
     pub key: Option<String>,
     #[validate(length(max = 255, message = "organization must be less than 255 chars."))]
-    pub company_id: Option<String>,
+    pub company_id: String,
     #[validate(length(max = 255, message = "deployer must be less than 255 chars."))]
-    pub deployer_id: Option<String>,
+    pub deployer_id: String,
     #[serde(skip_serializing)]
     pub new_bytearray: NewApfGeBytearray,
     pub deploy_time: i64,

@@ -15,6 +15,8 @@ pub struct ApfReProcdef {
     pub resource_name: Option<String>,
     pub description: Option<String>,
     pub suspension_state: i32,
+    pub deployer_id: String,
+    pub company_id: String,
 }
 
 #[derive(Debug)]
@@ -34,4 +36,6 @@ pub struct NewApfReProcdef {
     pub resource_name: Option<String>,
     pub description: Option<String>,
     pub suspension_state: i32,
+    pub deployer_id: String,
+    pub company_id: String,
 }
