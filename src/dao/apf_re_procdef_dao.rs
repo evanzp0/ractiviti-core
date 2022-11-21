@@ -1,8 +1,9 @@
 use color_eyre::Result;
+use dysql_macro::fetch_all;
 use tokio_pg_mapper::{FromTokioPostgresRow};
 use tokio_postgres::Transaction;
 
-use crate::{model::{ApfReProcdef, NewApfReProcdef}, gen_id, error::{AppError, ErrorCode}};
+use crate::{model::{ApfReProcdef, NewApfReProcdef}, gen_id, error::{AppError, ErrorCode}, dto::ProcdefDto};
 use super::{BaseDao, Dao};
 
 const SELECT_FROM: &str = "select id, rev, name, key, version, deployment_id, resource_name,
@@ -129,6 +130,24 @@ impl<'a> ApfReProcdefDao<'a> {
         
         Ok(rst)
     }
+
+    pub async  fn find_by_dto(&self, proc_def_dto: &ProcdefDto) -> Result<Vec<ApfReProcdef>> {
+        let tran = self.tran();
+        let rst = fetch_all!(|proc_def_dto, tran| -> ApfReProcdef {
+            "select id, rev, name, key, version, deployment_id, resource_name,
+                description, suspension_state, deployer_id, company_id
+            from apf_re_procdef
+            where is_deleted = 0
+                and {{#id}} id = :id {{/id}}
+                and {{#name}} name = :name {{/name}}
+                and {{#key}} key = :key {{/key}}
+                and {{#deployment_id}} deployment_id = :deployment_id {{/deployment_id}}
+                and {{#deployer_id}} deployer_id = :deployer_id {{/deployer_id}}
+                and {{#company_id}} company_id = :company_id {{/company_id}}"
+        })?;
+
+        Ok(rst)
+    }
 }
 
 #[cfg(test)]
@@ -192,6 +211,26 @@ mod tests{
 
         let procdef5 = prcdef_dao.get_by_deplyment_id(&procdef4.deployment_id).await.unwrap();
         assert_eq!(procdef4, procdef5);
+        tran.rollback().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_find_by_dto() {
+        let mut conn = db::get_connect().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
+
+        let prcdef_dao = ApfReProcdefDao::new(&tran);
+        let proc_def_dto = ProcdefDto {
+            id: Some("1".to_owned()),
+            name: Some("1".to_owned()),
+            key: Some("1".to_owned()),
+            deployment_id: Some("1".to_owned()),
+            deployer_id: Some("1".to_owned()),
+            company_id: Some("1".to_owned()),
+        };
+        let rst = prcdef_dao.find_by_dto(&proc_def_dto).await.unwrap();
+        assert_eq!(0, rst.len());
+
         tran.rollback().await.unwrap();
     }
 }
