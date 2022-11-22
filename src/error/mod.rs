@@ -7,13 +7,12 @@ use serde::{Serialize, Serializer};
 #[derive(Copy, Clone, Debug, Eq, PartialEq, IntEnum)]
 pub enum ErrorCode {
     InvalidCredentials = 401_01,
-    NotAuthorized = 401_02,
+    UnAuthorized = 401_02,
     NotFound = 404_01,
     InternalError = 500_01,
     UnexpectedError = 500_02,
     InvalidInput = 501_01,
     NotSupportError = 501_02,
-    ResourceExist = 501_03,
     SessionNotExist = 501_04,
     FileSizeError = 501_05,
     ParseError = 501_06,
@@ -32,9 +31,8 @@ impl ErrorCode {
             ErrorCode::InternalError => "Inernal error".to_string(),
             ErrorCode::InvalidInput => "Invalid input".to_string(),
             ErrorCode::NotSupportError => "Not support".to_string(),
-            ErrorCode:: ResourceExist => "Resource exists".to_string(),
             ErrorCode::InvalidCredentials => "Invalid username or password provided".to_string(),
-            ErrorCode::NotAuthorized => "Not authorized".to_string(),
+            ErrorCode::UnAuthorized => "Not authorized".to_string(),
             ErrorCode::SessionNotExist => "Session not exists".to_string(),
             ErrorCode::NotFound => "Not found".to_string(),
             ErrorCode::FileSizeError => "File size error".to_string(),
@@ -73,6 +71,37 @@ impl AppError {
             msg: message,
             location: location.to_owned(),
             child_err: source,
+        }
+    }
+
+    pub fn new_for_input_err(msg: Option<&str>, field: &str) -> Self {
+        let mut message = ErrorCode::InternalError.default_message();
+        if let Some(m) = msg {
+            message = m.to_owned();
+        }
+        let field = Some(field.to_owned());
+
+        Self {
+            code: ErrorCode::InternalError,
+            field,
+            msg: message,
+            location: "".to_owned(),
+            child_err: None,
+        }
+    }
+
+    pub fn new_for_biz_err(code: ErrorCode, msg: Option<&str>) -> Self {
+        let mut message = code.default_message();
+        if let Some(m) = msg {
+            message = m.to_owned();
+        }
+
+        Self {
+            code,
+            field: None,
+            msg: message,
+            location: "".to_owned(),
+            child_err: None,
         }
     }
 

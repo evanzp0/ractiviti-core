@@ -296,7 +296,7 @@ impl BaseOperator {
         if tasks.is_empty() {
             Err(
                 AppError::new(
-                    ErrorCode::NotAuthorized,
+                    ErrorCode::UnAuthorized,
                     Some(
                         &format!(
                             "Current user ({}) has not been authorized to complete the task ({})",

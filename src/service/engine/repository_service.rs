@@ -79,7 +79,7 @@ impl RepositoryService {
         }
 
         tran.rollback().await?;
-        Err(AppError::new(ErrorCode::ResourceExist, Some("流程名称已存在无法创建"), concat!(file!(), ":", line!()), None))?
+        Err(AppError::new_for_input_err(Some("流程名称已存在无法创建"), "bpmn_name"))?
     } 
 }
 
