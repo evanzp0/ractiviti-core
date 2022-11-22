@@ -4,7 +4,7 @@ use tokio_postgres::Transaction;
 
 use crate::common::{db, md5};
 use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao, ApfReProcdefDao};
-use crate::dto::DeploymentDto;
+use crate::dto::{DeploymentDto, BpmnResultDto};
 use crate::error::{AppError, ErrorCode};
 use crate::model::{ApfReDeployment, ApfReProcdef};
 use crate::service::engine::{BpmnManager, BpmnProcess};
@@ -81,6 +81,45 @@ impl RepositoryService {
         tran.rollback().await?;
         Err(AppError::new_for_input_err(Some("流程名称已存在无法创建"), "bpmn_name"))?
     } 
+
+    pub async fn get_bpmn_by_procdef_id(&self, procdef_id: String) -> Result<BpmnResultDto> {
+        let mut conn = db::get_connect().await?;
+        let tran = conn.transaction().await?;
+
+        let procdef_dao = ApfReProcdefDao::new(&tran);
+        let procdef = procdef_dao.get_by_id(&procdef_id).await?;
+
+        let bytearray_dao = ApfGeBytearrayDao::new(&tran);
+        let bytearray = bytearray_dao.get_by_deployment_id(&procdef.deployment_id).await?;
+
+        let bytes = if let Some(b) = bytearray.bytes {
+            b
+        } else {
+            Err(
+                AppError::new(
+                    ErrorCode::InternalError,
+                    Some(
+                        &format!(
+                            "apf_ge_bytearray({}) bytes is null", 
+                            bytearray.id
+                        )
+                    ), 
+                    concat!(file!(), ":", line!()),
+                    None
+                )
+            )?
+        };
+        
+        let xml = String::from_utf8(bytes)?;
+        let dto = BpmnResultDto {
+            bpmn_id: procdef.id,
+            bpmn_key: procdef.key,
+            bpmn_name: procdef.name,
+            xml: Some(xml),
+        };
+
+        Ok(dto)
+    }
 }
 
 #[cfg(test)]
