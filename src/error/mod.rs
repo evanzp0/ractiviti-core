@@ -75,14 +75,14 @@ impl AppError {
     }
 
     pub fn new_for_input_err(msg: Option<&str>, field: &str) -> Self {
-        let mut message = ErrorCode::InternalError.default_message();
+        let mut message = ErrorCode::InvalidInput.default_message();
         if let Some(m) = msg {
             message = m.to_owned();
         }
         let field = Some(field.to_owned());
 
         Self {
-            code: ErrorCode::InternalError,
+            code: ErrorCode::InvalidInput,
             field,
             msg: message,
             location: "".to_owned(),
