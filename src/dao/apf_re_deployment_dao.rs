@@ -31,7 +31,7 @@ impl<'a> ApfReDeploymentDao<'a> {
 
     pub async fn get_by_id(&self, id: &str) -> Result<ApfReDeployment> {
         let sql = r#"
-            select id, name, key, company_id, deployer_id, deploy_time 
+            select id, name, key, company_id, company_name, deployer_id, deployer_name, deploy_time 
             from apf_re_deployment
             where id = $1
         "#;
@@ -46,9 +46,9 @@ impl<'a> ApfReDeploymentDao<'a> {
     pub async fn create(&self, obj: &NewApfReDeployment) -> Result<ApfReDeployment> {
         obj.validate()?;
         let sql = r#"insert into apf_re_deployment (
-                id, name, key, company_id, deployer_id, deploy_time
+                id, name, key, company_id, company_name, deployer_id, deployer_name, deploy_time
             ) values (
-                $1, $2, $3, $4, $5, $6
+                $1, $2, $3, $4, $5, $6, $7, $8
             )
             returning *
         "#;
@@ -63,7 +63,9 @@ impl<'a> ApfReDeploymentDao<'a> {
                     &obj.name,
                     &obj.key,
                     &obj.company_id,
+                    &obj.company_name,
                     &obj.deployer_id,
+                    &obj.deployer_name,
                     &obj.deploy_time,
                 ]
             )
@@ -77,7 +79,7 @@ impl<'a> ApfReDeploymentDao<'a> {
     pub async fn query_by_page(&self, pg_dto: &mut PageDto<DeploymentDto>) -> Result<Pagination<ApfReDeployment>> {
         let tran = self.tran();
         let pg_deployment = page!(|pg_dto, tran| -> ApfReDeployment {
-            "SELECT id, name, key, company_id, deployer_id, deploy_time 
+            "SELECT id, name, key, company_id, company_name, deployer_id, deployer_name, deploy_time 
             FROM apf_re_deployment
             WHERE 1 = 1
             {{#data}}
@@ -152,7 +154,9 @@ mod tests {
             name: "test1".to_string(),
             key: "key1".to_string(),
             company_id: "test_comp_1".to_owned(),
+            company_name: "test_comp_1".to_owned(),
             deployer_id: "test_user_1".to_owned(),
+            deployer_name: "test_user_1".to_owned(),
             new_bytearray: NewApfGeBytearray::new(),
             deploy_time: get_now(),
         };

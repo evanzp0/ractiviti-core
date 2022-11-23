@@ -42,6 +42,16 @@ impl DeploymentBuilder {
         self
     }
 
+    pub fn deployer_name(mut self, deployer_name: &str) -> DeploymentBuilder {
+        self.new_deployment.deployer_name = deployer_name.to_string();
+        self
+    }
+
+    pub fn company_name(mut self, company_name: &str) -> DeploymentBuilder {
+        self.new_deployment.company_name = company_name.to_string();
+        self
+    }
+
     pub fn bytes(mut self, bytes: Vec<u8>) ->  Result<DeploymentBuilder> {
 
         if bytes.len() > 1024 * 1024 * 2 {
@@ -120,7 +130,9 @@ impl DeploymentBuilder {
             resource_name: _bytearray.name.clone(),
             description: bpmn_proc.description.clone(),
             deployer_id: self.new_deployment.deployer_id.clone(),
+            deployer_name: self.new_deployment.deployer_name.clone(),
             company_id: self.new_deployment.company_id.clone(),
+            company_name: self.new_deployment.company_name.clone(),
         };
 
         let procdef_dao = ApfReProcdefDao::new(tran);
@@ -152,7 +164,9 @@ pub mod tests {
             .name("test_deploy")
             .key("test_key")
             .deployer_id("test_user_1")
+            .deployer_name("test_user_name")
             .company_id("test_comp_1")
+            .company_name("test_comp_1")
             .deploy_with_tran(tran)
             .await
             .unwrap();

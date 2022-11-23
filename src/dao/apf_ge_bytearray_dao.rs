@@ -130,7 +130,9 @@ mod tests {
             name: "test1".to_string(),
             key: "key1".to_string(),
             company_id: "test_comp_1".to_owned(),
+            company_name: "test_comp_1".to_owned(),
             deployer_id: "test_user_1".to_owned(),
+            deployer_name: "test_user_1".to_owned(),
             new_bytearray: NewApfGeBytearray::new(),
             deploy_time: get_now(),
         };

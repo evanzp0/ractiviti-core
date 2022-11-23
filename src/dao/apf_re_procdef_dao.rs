@@ -7,7 +7,7 @@ use crate::{model::{ApfReProcdef, NewApfReProcdef}, gen_id, error::{AppError, Er
 use super::{BaseDao, Dao};
 
 const SELECT_FROM: &str = "select id, rev, name, key, version, deployment_id, resource_name,
-    description, suspension_state, deployer_id, company_id
+    description, suspension_state, deployer_id, deployer_name, company_id, company_name
     from apf_re_procdef
     where is_deleted = 0";
 
@@ -108,11 +108,11 @@ impl<'a> ApfReProcdefDao<'a> {
             insert into apf_re_procdef (
                 name, rev, key, version, deployment_id, 
                 resource_name, description, suspension_state, id, deployer_id, 
-                company_id
+                deployer_name, company_id, company_name
             ) values (
                 $1, $2, $3, $4, $5, 
                 $6, $7, $8, $9, $10, 
-                $11
+                $11, $12, $13
             )
             returning *
         "#;
@@ -134,7 +134,9 @@ impl<'a> ApfReProcdefDao<'a> {
                     &obj.suspension_state,
                     &new_id,
                     &obj.deployer_id,
+                    &obj.deployer_name,
                     &obj.company_id,
+                    &obj.company_name,
                 ]
             )
             .await?;
@@ -147,7 +149,7 @@ impl<'a> ApfReProcdefDao<'a> {
         let tran = self.tran();
         let rst = fetch_all!(|proc_def_dto, tran| -> ApfReProcdef {
             "select id, rev, name, key, version, deployment_id, resource_name,
-                description, suspension_state, deployer_id, company_id
+                description, suspension_state, deployer_id, deployer_name, company_id, company_name
             from apf_re_procdef
             where is_deleted = 0
                 and {{#id}} id = :id {{/id}}
@@ -155,7 +157,9 @@ impl<'a> ApfReProcdefDao<'a> {
                 and {{#key}} key = :key {{/key}}
                 and {{#deployment_id}} deployment_id = :deployment_id {{/deployment_id}}
                 and {{#deployer_id}} deployer_id = :deployer_id {{/deployer_id}}
-                and {{#company_id}} company_id = :company_id {{/company_id}}"
+                and {{#deployer_name}} deployer_name = :deployer_name {{/deployer_name}}
+                and {{#company_id}} company_id = :company_id {{/company_id}}
+                and {{#company_name}} company_name = :company_name {{/company_name}}"
         })?;
 
         Ok(rst)
@@ -180,7 +184,9 @@ mod tests{
             name: "test1".to_string(),
             key: "key1".to_string(),
             company_id: "test_comp_1".to_owned(),
+            company_name: "test_comp_1".to_owned(),
             deployer_id: "test_user_1".to_owned(),
+            deployer_name: "test_user_1".to_owned(),
             new_bytearray: NewApfGeBytearray::new(),
             deploy_time: get_now(),
         };
@@ -196,7 +202,9 @@ mod tests{
             description: None,
             suspension_state: SuspensionState::FALSE,
             deployer_id: "test_user1".to_owned(),
+            deployer_name: "test_user1".to_owned(),
             company_id: "test_comp1".to_owned(),
+            company_name: "test_comp1".to_owned(),
         };
 
         let procdef1 = prcdef_dao.create(&new_prcdef1).await.unwrap();
@@ -212,7 +220,9 @@ mod tests{
             description: None,
             suspension_state: SuspensionState::FALSE,
             deployer_id: "test_user1".to_owned(),
+            deployer_name: "test_user1".to_owned(),
             company_id: "test_comp1".to_owned(),
+            company_name: "test_comp1".to_owned(),
         };
 
         let procdef3 = prcdef_dao.create(&new_prcdef2).await.unwrap();
@@ -238,7 +248,9 @@ mod tests{
             key: Some("1".to_owned()),
             deployment_id: Some("1".to_owned()),
             deployer_id: Some("1".to_owned()),
+            deployer_name: Some("1".to_owned()),
             company_id: Some("1".to_owned()),
+            company_name: Some("1".to_owned()),
         };
         let rst = prcdef_dao.find_by_dto(&proc_def_dto).await.unwrap();
         assert_eq!(0, rst.len());

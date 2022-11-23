@@ -8,5 +8,7 @@ pub struct ProcdefDto {
     pub key: Option<String>,
     pub deployment_id: Option<String>,
     pub deployer_id: Option<String>,
+    pub deployer_name: Option<String>,
     pub company_id: Option<String>,
+    pub company_name: Option<String>,
 }

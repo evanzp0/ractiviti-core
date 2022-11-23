@@ -19,7 +19,9 @@ CREATE TABLE apf_re_deployment (
     name VARCHAR(255) NOT NULL,
     key VARCHAR(255) NOT NULL,
     company_id VARCHAR(255) NOT NULL,
+    company_name VARCHAR(100) NOT NULL,
     deployer_id VARCHAR(255) NOT NULL,
+    deployer_name VARCHAR(50) NOT NULL,
     deploy_time BIGINT NOT NULL
 );
 
@@ -34,7 +36,9 @@ CREATE TABLE apf_re_procdef (
     description VARCHAR(4000) NULL,
     suspension_state INT DEFAULT 0,
     company_id VARCHAR(255) NOT NULL,
+    company_name VARCHAR(100) NOT NULL,
     deployer_id VARCHAR(255) NOT NULL,
+    deployer_name VARCHAR(50) NOT NULL,
     is_deleted INT DEFAULT 0,
 
     unique (key, version)
