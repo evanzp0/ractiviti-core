@@ -47,12 +47,12 @@ impl RepositoryService {
         Ok(pg_deployment)
     }
 
-    pub async fn create_procdef(&self, bpmn_name: &str, deployer_id: &str, company_id: &str, bpmn_xml: &str) -> Result<ApfReProcdef> {
+    pub async fn create_procdef(&self, bpmn_name: &str, deployer_id: &str, deployer_name: &str, company_id: &str, company_name: &str, bpmn_xml: &str) -> Result<ApfReProcdef> {
         let mut conn = db::get_connect().await?;
         let tran = conn.transaction().await?;
 
         let procdef_dao = ApfReProcdefDao::new(&tran);
-        let procdef_key = md5(bpmn_name);
+        let procdef_key = md5(bpmn_name.to_lowercase());
         let bytes = bpmn_xml.as_bytes().to_vec();
         
         let lastest_procdef = procdef_dao.get_lastest_by_key(&procdef_key, company_id).await;
@@ -66,7 +66,9 @@ impl RepositoryService {
                     .name(bpmn_name)
                     .key(&procdef_key)
                     .deployer_id(deployer_id)
+                    .deployer_name(deployer_name)
                     .company_id(company_id)
+                    .company_name(company_name)
                     .bytes(bytes)?
                     .deploy_with_tran(&tran)
                     .await?;
