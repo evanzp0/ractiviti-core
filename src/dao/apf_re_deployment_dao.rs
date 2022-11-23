@@ -90,7 +90,8 @@ impl<'a> ApfReDeploymentDao<'a> {
                 {{#deployer_id}}and deployer_id = :data.deployer_id{{/deployer_id}}
                 {{#deploy_time_from}}and deploy_time >= :data.deploy_time_from{{/deploy_time_from}}
                 {{#deploy_time_to}}and deploy_time <= :data.deploy_time_to{{/deploy_time_to}}
-            {{/data}}"
+            {{/data}}
+            ORDER BY deploy_time DESC"
         })?;
 
         Ok(pg_deployment)

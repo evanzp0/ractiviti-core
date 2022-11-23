@@ -8,6 +8,7 @@ use std::io::BufReader;
 use crate::common::db;
 use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao, ApfReProcdefDao};
 use crate::error::{AppError, ErrorCode};
+use crate::get_now;
 use crate::service::engine::BpmnManager;
 use crate::model::{ApfReDeployment, NewApfGeBytearray, NewApfReDeployment, NewApfReProcdef, SuspensionState};
 
@@ -113,6 +114,7 @@ impl DeploymentBuilder {
 
         // create deployment
         let deployment_dao = ApfReDeploymentDao::new(tran);
+        self.new_deployment.deploy_time = get_now();
         let deployment = deployment_dao.create(&self.new_deployment).await?;
 
         // create bytearray

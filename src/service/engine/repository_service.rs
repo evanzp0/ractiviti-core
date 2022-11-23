@@ -84,12 +84,38 @@ impl RepositoryService {
         Err(AppError::new_for_input_err(Some("流程名称已存在无法创建"), "bpmn_name"))?
     } 
 
-    pub async fn get_bpmn_by_procdef_id(&self, procdef_id: String) -> Result<BpmnResultDto> {
+    pub async fn publish_procdef(&self, procdef: &ApfReProcdef, deployer_id: &str, deployer_name: &str, bpmn_xml: &str) -> Result<ApfReProcdef> {
         let mut conn = db::get_connect().await?;
         let tran = conn.transaction().await?;
 
         let procdef_dao = ApfReProcdefDao::new(&tran);
-        let procdef = procdef_dao.get_by_id(&procdef_id).await?;
+        let bytes = bpmn_xml.as_bytes().to_vec();
+        
+
+        let builder = DeploymentBuilder::new();
+        let deployment = builder
+            .name(&procdef.name)
+            .key(&procdef.key)
+            .deployer_id(deployer_id)
+            .deployer_name(deployer_name)
+            .company_id(&procdef.company_id)
+            .company_name(&procdef.company_name)
+            .bytes(bytes)?
+            .deploy_with_tran(&tran)
+            .await?;
+
+        let procdef = procdef_dao.get_by_deplyment_id(&deployment.id).await?;
+        tran.commit().await?;
+
+        return Ok(procdef);
+    } 
+
+    pub async fn get_bpmn_by_procdef_id(&self, procdef_id: &str) -> Result<BpmnResultDto> {
+        let mut conn = db::get_connect().await?;
+        let tran = conn.transaction().await?;
+
+        let procdef_dao = ApfReProcdefDao::new(&tran);
+        let procdef = procdef_dao.get_by_id(procdef_id).await?;
 
         let bytearray_dao = ApfGeBytearrayDao::new(&tran);
         let bytearray = bytearray_dao.get_by_deployment_id(&procdef.deployment_id).await?;
@@ -121,6 +147,16 @@ impl RepositoryService {
         };
 
         Ok(dto)
+    }
+
+    pub async fn get_procdef_by_id(&self, procdef_id: &str) -> Result<ApfReProcdef> {
+        let mut conn = db::get_connect().await?;
+        let tran = conn.transaction().await?;
+
+        let procdef_dao = ApfReProcdefDao::new(&tran);
+        let procdef = procdef_dao.get_by_id(procdef_id).await?;
+
+        Ok(procdef)
     }
 }
 
