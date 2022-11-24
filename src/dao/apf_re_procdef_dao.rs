@@ -1,5 +1,6 @@
 use color_eyre::Result;
-use dysql_macro::fetch_all;
+use dysql::{PageDto, Pagination};
+use dysql_macro::{fetch_all, page, sql};
 use tokio_pg_mapper::{FromTokioPostgresRow};
 use tokio_postgres::Transaction;
 
@@ -147,22 +148,48 @@ impl<'a> ApfReProcdefDao<'a> {
         Ok(rst)
     }
 
+    sql!(
+        "find_by_sql", 
+        "select t1.id, t1.rev, t1.name, t1.key, t1.version, t1.deployment_id, t1.resource_name,
+        t1.description, t1.suspension_state, t1.deployer_id, t1.deployer_name, t1.company_id, t1.company_name, t2.deploy_time
+        from apf_re_procdef t1
+        join apf_re_deployment t2 on t2.id = t1.deployment_id
+        where t1.is_deleted = 0 "
+    );
+
     pub async  fn find_by_dto(&self, proc_def_dto: &ProcdefDto) -> Result<Vec<ApfReProcdef>> {
         let tran = self.tran();
         let rst = fetch_all!(|proc_def_dto, tran| -> ApfReProcdef {
-            "select t1.id, t1.rev, t1.name, t1.key, t1.version, t1.deployment_id, t1.resource_name,
-            t1.description, t1.suspension_state, t1.deployer_id, t1.deployer_name, t1.company_id, t1.company_name, t2.deploy_time
-            from apf_re_procdef t1
-                join apf_re_deployment t2 on t2.id = t1.deployment_id
-            where t1.is_deleted = 0
-                and {{#id}} t1.id = :id {{/id}}
-                and {{#name}} t1.name = :name {{/name}}
-                and {{#key}} t1.key = :key {{/key}}
-                and {{#deployment_id}} t1.deployment_id = :deployment_id {{/deployment_id}}
-                and {{#deployer_id}} t1.deployer_id = :deployer_id {{/deployer_id}}
-                and {{#deployer_name}} t1.deployer_name = :deployer_name {{/deployer_name}}
-                and {{#company_id}} t1.company_id = :company_id {{/company_id}}
-                and {{#company_name}} t1.company_name = :company_name {{/company_name}}"
+            find_by_sql + "
+            {{#id}} and t1.id = :id {{/id}}
+            {{#name}} and t1.name = :name {{/name}}
+            {{#key}} and t1.key = :key {{/key}}
+            {{#deployment_id}} and t1.deployment_id = :deployment_id {{/deployment_id}}
+            {{#deployer_id}} and t1.deployer_id = :deployer_id {{/deployer_id}}
+            {{#deployer_name}} and t1.deployer_name = :deployer_name {{/deployer_name}}
+            {{#company_id}} and t1.company_id = :company_id {{/company_id}}
+            {{#company_name}} and t1.company_name = :company_name {{/company_name}}
+            "
+        })?;
+
+        Ok(rst)
+    }
+
+    pub async  fn query_by_page(&self, proc_def_dto: &mut PageDto<ProcdefDto>) -> Result<Pagination<ApfReProcdef>> {
+        let tran = self.tran();
+        let rst = page!(|proc_def_dto, tran| -> ApfReProcdef {
+            find_by_sql + "
+            {{#data}}
+                {{#id}} and t1.id = :data.id {{/id}}
+                {{#name}} and t1.name = :data.name {{/name}}
+                {{#key}} and t1.key = :data.key {{/key}}
+                {{#deployment_id}} and t1.deployment_id = :data.deployment_id {{/deployment_id}}
+                {{#deployer_id}} and t1.deployer_id = :data.deployer_id {{/deployer_id}}
+                {{#deployer_name}} and t1.deployer_name = :data.deployer_name {{/deployer_name}}
+                {{#company_id}} and t1.company_id = :data.company_id {{/company_id}}
+                {{#company_name}} and t1.company_name = :data.company_name {{/company_name}}
+            {{/data}}
+            "
         })?;
 
         Ok(rst)
@@ -257,6 +284,29 @@ mod tests{
         };
         let rst = prcdef_dao.find_by_dto(&proc_def_dto).await.unwrap();
         assert_eq!(0, rst.len());
+
+        tran.rollback().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_query_by_page() {
+        let mut conn = db::get_connect().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
+
+        let prcdef_dao = ApfReProcdefDao::new(&tran);
+        let proc_def_dto = ProcdefDto {
+            id: Some("1".to_owned()),
+            name: None,
+            key: Some("1".to_owned()),
+            deployment_id: Some("1".to_owned()),
+            deployer_id: Some("1".to_owned()),
+            deployer_name: Some("1".to_owned()),
+            company_id: Some("1".to_owned()),
+            company_name: Some("1".to_owned()),
+        };
+        let mut pg_dto = PageDto::new(2, 0, proc_def_dto);
+        let rst = prcdef_dao.query_by_page(&mut pg_dto).await.unwrap();
+        assert_eq!(0, rst.total);
 
         tran.rollback().await.unwrap();
     }

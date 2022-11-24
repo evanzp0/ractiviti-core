@@ -4,7 +4,7 @@ use tokio_postgres::Transaction;
 
 use crate::common::{db, md5};
 use crate::dao::{ApfGeBytearrayDao, ApfReDeploymentDao, ApfReProcdefDao};
-use crate::dto::{DeploymentDto, BpmnResultDto};
+use crate::dto::{DeploymentDto, BpmnResultDto, ProcdefDto};
 use crate::error::{AppError, ErrorCode};
 use crate::model::{ApfReDeployment, ApfReProcdef};
 use crate::service::engine::{BpmnManager, BpmnProcess};
@@ -157,6 +157,16 @@ impl RepositoryService {
         let procdef = procdef_dao.get_by_id(procdef_id).await?;
 
         Ok(procdef)
+    }
+
+    pub async fn query_procdef_by_page(&self, pg_dto: &mut PageDto<ProcdefDto>) -> Result<Pagination<ApfReProcdef>> {
+        let mut conn = db::get_connect().await?;
+        let tran = conn.transaction().await?;
+
+        let procdef_dao = ApfReProcdefDao::new(&tran);
+        let pg_deployment = procdef_dao.query_by_page(pg_dto).await?;
+
+        Ok(pg_deployment)
     }
 }
 
