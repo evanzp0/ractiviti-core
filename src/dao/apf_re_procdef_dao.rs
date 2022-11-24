@@ -6,10 +6,11 @@ use tokio_postgres::Transaction;
 use crate::{model::{ApfReProcdef, NewApfReProcdef}, gen_id, error::{AppError, ErrorCode}, dto::ProcdefDto};
 use super::{BaseDao, Dao};
 
-const SELECT_FROM: &str = "select id, rev, name, key, version, deployment_id, resource_name,
-    description, suspension_state, deployer_id, deployer_name, company_id, company_name
-    from apf_re_procdef
-    where is_deleted = 0";
+const SELECT_FROM: &str = "select t1.id, t1.rev, t1.name, t1.key, t1.version, t1.deployment_id, t1.resource_name,
+    t1.description, t1.suspension_state, t1.deployer_id, t1.deployer_name, t1.company_id, t1.company_name, t2.deploy_time
+    from apf_re_procdef t1
+        join apf_re_deployment t2 on t2.id = t1.deployment_id
+    where t1.is_deleted = 0";
 
 pub struct ApfReProcdefDao<'a> {
     base_dao: BaseDao<'a>
@@ -33,7 +34,7 @@ impl<'a> ApfReProcdefDao<'a> {
     }
     
     pub async fn get_by_id(&self, id: &str) -> Result<ApfReProcdef> {
-        let sql = format!("{} {}", SELECT_FROM, "and id = $1");
+        let sql = format!("{} {}", SELECT_FROM, "and t1.id = $1");
 
         let stmt = self.tran().prepare(&sql).await?;
         let row = self.tran().query_one(&stmt, &[&id]).await?;
@@ -43,7 +44,7 @@ impl<'a> ApfReProcdefDao<'a> {
     }
 
     pub async fn get_by_deplyment_id(&self, deployment_id: &str) -> Result<ApfReProcdef> {
-        let sql = format!("{} {}", SELECT_FROM, "and deployment_id = $1");
+        let sql = format!("{} {}", SELECT_FROM, "and t1.deployment_id = $1");
 
         let stmt = self.tran().prepare(&sql).await?;
         let row = self.tran().query_one(&stmt, &[&deployment_id]).await?;
@@ -53,10 +54,10 @@ impl<'a> ApfReProcdefDao<'a> {
     }
 
     pub async fn get_lastest_by_key(&self, key: &str, company_id: &str) -> Result<ApfReProcdef> {
-        let where_sql = "and key = $1
-            and company_id = $2
-            and suspension_state = 0
-            order by version desc
+        let where_sql = "and t1.key = $1
+            and t1.company_id = $2
+            and t1.suspension_state = 0
+            order by t1.version desc
             limit 1";
 
         let sql = format!("{} {}", SELECT_FROM, where_sql);
@@ -114,7 +115,7 @@ impl<'a> ApfReProcdefDao<'a> {
                 $6, $7, $8, $9, $10, 
                 $11, $12, $13
             )
-            returning *
+            returning id
         "#;
         let new_id = gen_id();
         let rev: i32 = 1;
@@ -140,7 +141,8 @@ impl<'a> ApfReProcdefDao<'a> {
                 ]
             )
             .await?;
-        let rst = ApfReProcdef::from_row(row)?;
+        let id: String = row.get(0);
+        let rst = self.get_by_id(&id).await?;
         
         Ok(rst)
     }
@@ -148,18 +150,19 @@ impl<'a> ApfReProcdefDao<'a> {
     pub async  fn find_by_dto(&self, proc_def_dto: &ProcdefDto) -> Result<Vec<ApfReProcdef>> {
         let tran = self.tran();
         let rst = fetch_all!(|proc_def_dto, tran| -> ApfReProcdef {
-            "select id, rev, name, key, version, deployment_id, resource_name,
-                description, suspension_state, deployer_id, deployer_name, company_id, company_name
-            from apf_re_procdef
-            where is_deleted = 0
-                and {{#id}} id = :id {{/id}}
-                and {{#name}} name = :name {{/name}}
-                and {{#key}} key = :key {{/key}}
-                and {{#deployment_id}} deployment_id = :deployment_id {{/deployment_id}}
-                and {{#deployer_id}} deployer_id = :deployer_id {{/deployer_id}}
-                and {{#deployer_name}} deployer_name = :deployer_name {{/deployer_name}}
-                and {{#company_id}} company_id = :company_id {{/company_id}}
-                and {{#company_name}} company_name = :company_name {{/company_name}}"
+            "select t1.id, t1.rev, t1.name, t1.key, t1.version, t1.deployment_id, t1.resource_name,
+            t1.description, t1.suspension_state, t1.deployer_id, t1.deployer_name, t1.company_id, t1.company_name, t2.deploy_time
+            from apf_re_procdef t1
+                join apf_re_deployment t2 on t2.id = t1.deployment_id
+            where t1.is_deleted = 0
+                and {{#id}} t1.id = :id {{/id}}
+                and {{#name}} t1.name = :name {{/name}}
+                and {{#key}} t1.key = :key {{/key}}
+                and {{#deployment_id}} t1.deployment_id = :deployment_id {{/deployment_id}}
+                and {{#deployer_id}} t1.deployer_id = :deployer_id {{/deployer_id}}
+                and {{#deployer_name}} t1.deployer_name = :deployer_name {{/deployer_name}}
+                and {{#company_id}} t1.company_id = :company_id {{/company_id}}
+                and {{#company_name}} t1.company_name = :company_name {{/company_name}}"
         })?;
 
         Ok(rst)

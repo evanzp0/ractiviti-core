@@ -19,6 +19,7 @@ pub struct ApfReProcdef {
     pub company_name: String,
     pub deployer_id: String,
     pub deployer_name: String,
+    pub deploy_time: i64,
 }
 
 #[derive(Debug)]
