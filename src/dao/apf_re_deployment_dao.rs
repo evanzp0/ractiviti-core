@@ -91,11 +91,7 @@ impl<'a> ApfReDeploymentDao<'a> {
                 {{#deploy_time_from}}and deploy_time >= :data.deploy_time_from{{/deploy_time_from}}
                 {{#deploy_time_to}}and deploy_time <= :data.deploy_time_to{{/deploy_time_to}}
             {{/data}}
-            {{#is_sort}}
-                ORDER BY 
-                    {{#sort_model}} {{field}} {{sort}}, {{/sort_model}}
-                    ![B_DEL(,)]
-            {{/is_sort}}"
+            {{#is_sort}}"
         })?;
 
         Ok(pg_deployment)

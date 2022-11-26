@@ -189,11 +189,6 @@ impl<'a> ApfReProcdefDao<'a> {
                 {{#company_id}} and t1.company_id = :data.company_id {{/company_id}}
                 {{#company_name}} and t1.company_name = :data.company_name {{/company_name}}
             {{/data}}
-            {{#is_sort}}
-                ORDER BY 
-                    {{#sort_model}} {{field}} {{sort}}, {{/sort_model}}
-                    ![B_DEL(,)]
-            {{/is_sort}}
             "
         })?;
 
