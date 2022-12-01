@@ -169,7 +169,7 @@ impl RepositoryService {
         Ok(pg_deployment)
     }
 
-    pub async fn delete_procdef_by_id(&self, procdef_id: &str) -> Result<()> {
+    pub async fn delete_procdef_by_id(&self, procdef_id: &str, user_id: &str) -> Result<()> {
         let mut conn = db::get_connect().await?;
         let tran = conn.transaction().await?;
 
