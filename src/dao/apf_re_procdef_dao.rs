@@ -1,6 +1,6 @@
 use color_eyre::Result;
-use dysql::{PageDto, Pagination};
-use dysql_macro::{fetch_all, page, sql};
+use dysql::{PageDto, Pagination, Value};
+use dysql_macro::{fetch_all, page, sql, execute};
 use tokio_pg_mapper::{FromTokioPostgresRow};
 use tokio_postgres::Transaction;
 
@@ -157,9 +157,9 @@ impl<'a> ApfReProcdefDao<'a> {
         where t1.is_deleted = 0 "
     );
 
-    pub async  fn find_by_dto(&self, proc_def_dto: &ProcdefDto) -> Result<Vec<ApfReProcdef>> {
+    pub async  fn find_by_dto(&self, procdef_dto: &ProcdefDto) -> Result<Vec<ApfReProcdef>> {
         let tran = self.tran();
-        let rst = fetch_all!(|proc_def_dto, tran| -> ApfReProcdef {
+        let rst = fetch_all!(|procdef_dto, tran| -> ApfReProcdef {
             find_by_sql + "
             {{#id}} and t1.id = :id {{/id}}
             {{#name}} and t1.name = :name {{/name}}
@@ -175,9 +175,9 @@ impl<'a> ApfReProcdefDao<'a> {
         Ok(rst)
     }
 
-    pub async  fn query_by_page(&self, proc_def_dto: &mut PageDto<ProcdefDto>) -> Result<Pagination<ApfReProcdef>> {
+    pub async  fn query_by_page(&self, procdef_dto: &mut PageDto<ProcdefDto>) -> Result<Pagination<ApfReProcdef>> {
         let tran = self.tran();
-        let rst = page!(|proc_def_dto, tran| -> ApfReProcdef {
+        let rst = page!(|procdef_dto, tran| -> ApfReProcdef {
             find_by_sql + "
             {{#data}}
                 {{#id}} and t1.id = :data.id {{/id}}
@@ -196,6 +196,24 @@ impl<'a> ApfReProcdefDao<'a> {
         })?;
 
         Ok(rst)
+    }
+
+    pub async fn delete_by_id(&self, procdef_id: &str) -> Result<()> {
+        let tran = self.tran();
+        let procdef_id_wrap = Value::new(procdef_id);
+        let rst = execute!(|&procdef_id_wrap, &tran| {
+            "UPDATE apf_re_procdef 
+            SET is_deleted = 1
+            WHERE ID = :value"
+        })?;
+
+        if rst != 1 {
+            Err(
+                AppError::new_for_biz_err(ErrorCode::InternalError, Some(&format!("删除流程失败定义(ID: {}) ", procdef_id)))
+            )?
+        }
+
+        Ok(())
     }
 }
 
@@ -316,6 +334,26 @@ mod tests{
         let mut pg_dto = PageDto::new(2, 0, proc_def_dto);
         let rst = prcdef_dao.query_by_page(&mut pg_dto).await.unwrap();
         assert_eq!(0, rst.total);
+
+        tran.rollback().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_delete_by_id() {
+        let mut conn = db::get_connect().await.unwrap();
+        let tran = conn.transaction().await.unwrap();
+
+        let prcdef_dao = ApfReProcdefDao::new(&tran);
+        let procdef_id = "1";
+
+        let rst = prcdef_dao.delete_by_id(procdef_id).await;
+
+        if let Err(error) = rst {
+            let err = error.downcast_ref::<AppError>().unwrap(); 
+            if err.code != ErrorCode::InternalError {
+                panic!("error procdef delete_by_id ")
+            }
+        }
 
         tran.rollback().await.unwrap();
     }
