@@ -20,6 +20,8 @@ pub struct ApfReProcdef {
     pub deployer_id: String,
     pub deployer_name: String,
     pub deploy_time: i64,
+    pub update_user_id: String,
+    pub update_time: i64,
 }
 
 #[derive(Debug)]
@@ -31,7 +33,7 @@ impl SuspensionState {
     pub const FALSE: i32 = 0;
 }
 
-#[derive(Debug, Deserialize, Validate, Default)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct NewApfReProcdef {
     pub name: String,
     pub key: String,
@@ -43,4 +45,6 @@ pub struct NewApfReProcdef {
     pub company_name: String,
     pub deployer_id: String,
     pub deployer_name: String,
+    pub update_user_id: String,
+    pub update_time: i64,
 }

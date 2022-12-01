@@ -39,6 +39,8 @@ CREATE TABLE apf_re_procdef (
     company_name VARCHAR(100) NOT NULL,
     deployer_id VARCHAR(255) NOT NULL,
     deployer_name VARCHAR(50) NOT NULL,
+    update_user_id VARCHAR(255) NOT NULL,
+    update_time BIGINT NOT NULL,
     is_deleted INT DEFAULT 0,
 
     unique (key, version)

@@ -1,14 +1,14 @@
 use color_eyre::Result;
-use dysql::{PageDto, Pagination, Value};
+use dysql::{PageDto, Pagination};
 use dysql_macro::{fetch_all, page, sql, execute};
 use tokio_pg_mapper::{FromTokioPostgresRow};
 use tokio_postgres::Transaction;
 
-use crate::{model::{ApfReProcdef, NewApfReProcdef}, gen_id, error::{AppError, ErrorCode}, dto::ProcdefDto};
+use crate::{model::{ApfReProcdef, NewApfReProcdef}, gen_id, error::{AppError, ErrorCode}, dto::ProcdefDto, get_now};
 use super::{BaseDao, Dao};
 
 const SELECT_FROM: &str = "select t1.id, t1.rev, t1.name, t1.key, t1.version, t1.deployment_id, t1.resource_name,
-    t1.description, t1.suspension_state, t1.deployer_id, t1.deployer_name, t1.company_id, t1.company_name, t2.deploy_time
+    t1.description, t1.suspension_state, t1.deployer_id, t1.deployer_name, t1.company_id, t1.update_user_id, t1.update_time, t1.company_name, t2.deploy_time
     from apf_re_procdef t1
         join apf_re_deployment t2 on t2.id = t1.deployment_id
     where t1.is_deleted = 0";
@@ -110,11 +110,11 @@ impl<'a> ApfReProcdefDao<'a> {
             insert into apf_re_procdef (
                 name, rev, key, version, deployment_id, 
                 resource_name, description, suspension_state, id, deployer_id, 
-                deployer_name, company_id, company_name
+                deployer_name, company_id, company_name, update_user_id, update_time
             ) values (
                 $1, $2, $3, $4, $5, 
                 $6, $7, $8, $9, $10, 
-                $11, $12, $13
+                $11, $12, $13, $14, $15
             )
             returning id
         "#;
@@ -139,6 +139,8 @@ impl<'a> ApfReProcdefDao<'a> {
                     &obj.deployer_name,
                     &obj.company_id,
                     &obj.company_name,
+                    &obj.update_user_id,
+                    &obj.update_time,
                 ]
             )
             .await?;
@@ -151,7 +153,7 @@ impl<'a> ApfReProcdefDao<'a> {
     sql!(
         "find_by_sql", 
         "select t1.id, t1.rev, t1.name, t1.key, t1.version, t1.deployment_id, t1.resource_name,
-        t1.description, t1.suspension_state, t1.deployer_id, t1.deployer_name, t1.company_id, t1.company_name, t2.deploy_time
+        t1.description, t1.suspension_state, t1.deployer_id, t1.deployer_name, t1.company_id, t1.company_name, t1.update_user_id, t1.update_time, t2.deploy_time
         from apf_re_procdef t1
         join apf_re_deployment t2 on t2.id = t1.deployment_id
         where t1.is_deleted = 0 "
@@ -198,13 +200,21 @@ impl<'a> ApfReProcdefDao<'a> {
         Ok(rst)
     }
 
-    pub async fn delete_by_id(&self, procdef_id: &str) -> Result<()> {
+    pub async fn delete_by_id(&self, procdef_id: &str, update_user_id: &str) -> Result<()> {
         let tran = self.tran();
-        let procdef_id_wrap = Value::new(procdef_id);
-        let rst = execute!(|&procdef_id_wrap, &tran| {
+        let procdef_dto = ProcdefDto {
+            id: Some(procdef_id.to_owned()),
+            update_user_id: Some(update_user_id.to_owned()),
+            update_time: Some(get_now()),
+            ..Default::default()
+        };
+
+        let rst = execute!(|&procdef_dto, &tran| {
             "UPDATE apf_re_procdef 
-            SET is_deleted = 1
-            WHERE ID = :value"
+            SET is_deleted = 1,
+                update_user_id = :update_user_id,
+                update_time = :update_time
+            WHERE ID = :id"
         })?;
 
         if rst != 1 {
@@ -256,6 +266,8 @@ mod tests{
             deployer_name: "test_user1".to_owned(),
             company_id: "test_comp1".to_owned(),
             company_name: "test_comp1".to_owned(),
+            update_user_id: "test_user1".to_owned(),
+            update_time: get_now(),
         };
 
         let procdef1 = prcdef_dao.create(&new_prcdef1).await.unwrap();
@@ -274,6 +286,8 @@ mod tests{
             deployer_name: "test_user1".to_owned(),
             company_id: "test_comp1".to_owned(),
             company_name: "test_comp1".to_owned(),
+            update_user_id: "test_user1".to_owned(),
+            update_time: get_now(),
         };
 
         let procdef3 = prcdef_dao.create(&new_prcdef2).await.unwrap();
@@ -305,6 +319,7 @@ mod tests{
             deploy_time_from: Some(1),
             deploy_time_to: Some(1),
             suspension_state: Some(0),
+            ..Default::default()
         };
         let rst = prcdef_dao.find_by_dto(&proc_def_dto).await.unwrap();
         assert_eq!(0, rst.len());
@@ -330,6 +345,7 @@ mod tests{
             deploy_time_from: Some(1),
             deploy_time_to: Some(1),
             suspension_state: Some(0),
+            ..Default::default()
         };
         let mut pg_dto = PageDto::new(2, 0, proc_def_dto);
         let rst = prcdef_dao.query_by_page(&mut pg_dto).await.unwrap();
@@ -345,8 +361,9 @@ mod tests{
 
         let prcdef_dao = ApfReProcdefDao::new(&tran);
         let procdef_id = "1";
+        let user_id = "test_userr_1";
 
-        let rst = prcdef_dao.delete_by_id(procdef_id).await;
+        let rst = prcdef_dao.delete_by_id(procdef_id, user_id).await;
 
         if let Err(error) = rst {
             let err = error.downcast_ref::<AppError>().unwrap(); 

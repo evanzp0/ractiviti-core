@@ -174,7 +174,7 @@ impl RepositoryService {
         let tran = conn.transaction().await?;
 
         let procdef_dao = ApfReProcdefDao::new(&tran);
-        procdef_dao.delete_by_id(procdef_id).await?;
+        procdef_dao.delete_by_id(procdef_id, user_id).await?;
 
         tran.commit().await?;
 

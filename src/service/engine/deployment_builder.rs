@@ -135,6 +135,8 @@ impl DeploymentBuilder {
             deployer_name: self.new_deployment.deployer_name.clone(),
             company_id: self.new_deployment.company_id.clone(),
             company_name: self.new_deployment.company_name.clone(),
+            update_user_id: self.new_deployment.deployer_id.clone(),
+            update_time:  self.new_deployment.deploy_time,
         };
 
         let procdef_dao = ApfReProcdefDao::new(tran);

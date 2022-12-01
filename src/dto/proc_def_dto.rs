@@ -1,7 +1,7 @@
 use ramhorns::Content;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize, Content)]
+#[derive(Debug, Deserialize, Content, Default)]
 pub struct ProcdefDto {
     pub id: Option<String>,
     pub name:  Option<String>,
@@ -14,6 +14,8 @@ pub struct ProcdefDto {
     pub deploy_time_from: Option<i64>,
     pub deploy_time_to: Option<i64>,
     pub suspension_state: Option<i32>,
+    pub update_user_id: Option<String>,
+    pub update_time: Option<i64>,
 }
 
 impl ProcdefDto {
@@ -41,6 +43,9 @@ impl ProcdefDto {
         }
         if let Some(company_name) = &self.company_name {
             self.company_name = Some(company_name.trim().to_owned())
+        }
+        if let Some(update_user_id) = &self.update_user_id {
+            self.update_user_id = Some(update_user_id.trim().to_owned())
         }
     }
 }
