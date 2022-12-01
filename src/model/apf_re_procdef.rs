@@ -22,6 +22,7 @@ pub struct ApfReProcdef {
     pub deploy_time: i64,
     pub update_user_id: String,
     pub update_time: i64,
+    pub is_deleted: i32,
 }
 
 #[derive(Debug)]
