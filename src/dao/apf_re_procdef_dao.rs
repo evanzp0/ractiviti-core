@@ -12,7 +12,7 @@ const SELECT_FROM: &str = "select t1.id, t1.rev, t1.name, t1.key, t1.version, t1
     t2.deploy_time, t1.is_deleted
     from apf_re_procdef t1
         join apf_re_deployment t2 on t2.id = t1.deployment_id
-    where t1.is_deleted = 0 ";
+    ";
 
 pub struct ApfReProcdefDao<'a> {
     base_dao: BaseDao<'a>
@@ -36,7 +36,7 @@ impl<'a> ApfReProcdefDao<'a> {
     }
     
     pub async fn get_by_id(&self, id: &str) -> Result<ApfReProcdef> {
-        let sql = format!("{} {}", SELECT_FROM, "and t1.id = $1");
+        let sql = format!("{} {}", SELECT_FROM, "where t1.id = $1");
 
         let stmt = self.tran().prepare(&sql).await?;
         let row = self.tran().query_one(&stmt, &[&id]).await?;
@@ -46,7 +46,7 @@ impl<'a> ApfReProcdefDao<'a> {
     }
 
     pub async fn get_by_deplyment_id(&self, deployment_id: &str) -> Result<ApfReProcdef> {
-        let sql = format!("{} {}", SELECT_FROM, "and t1.deployment_id = $1");
+        let sql = format!("{} {}", SELECT_FROM, "where t1.is_deleted = 0 and t1.deployment_id = $1");
 
         let stmt = self.tran().prepare(&sql).await?;
         let row = self.tran().query_one(&stmt, &[&deployment_id]).await?;
@@ -56,7 +56,7 @@ impl<'a> ApfReProcdefDao<'a> {
     }
 
     pub async fn get_lastest_by_key(&self, key: &str, company_id: &str) -> Result<ApfReProcdef> {
-        let where_sql = "and t1.key = $1
+        let where_sql = "where t1.key = $1
             and t1.company_id = $2
             order by t1.version desc
             limit 1";
@@ -109,11 +109,13 @@ impl<'a> ApfReProcdefDao<'a> {
             insert into apf_re_procdef (
                 name, rev, key, version, deployment_id, 
                 resource_name, description, suspension_state, id, deployer_id, 
-                deployer_name, company_id, company_name, update_user_id, update_time
+                deployer_name, company_id, company_name, update_user_id, update_time, 
+                is_deleted
             ) values (
                 $1, $2, $3, $4, $5, 
                 $6, $7, $8, $9, $10, 
-                $11, $12, $13, $14, $15
+                $11, $12, $13, $14, $15,
+                0
             )
             returning id
         "#;
