@@ -11,6 +11,9 @@ pub struct ProcdefDto {
     pub deployer_name: Option<String>,
     pub company_id: Option<String>,
     pub company_name: Option<String>,
+    pub deploy_time_from: Option<i64>,
+    pub deploy_time_to: Option<i64>,
+    pub suspension_state: Option<i32>,
 }
 
 impl ProcdefDto {

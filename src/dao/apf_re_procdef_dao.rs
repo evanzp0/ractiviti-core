@@ -188,6 +188,9 @@ impl<'a> ApfReProcdefDao<'a> {
                 {{#deployer_name}} and t1.deployer_name = :data.deployer_name {{/deployer_name}}
                 {{#company_id}} and t1.company_id = :data.company_id {{/company_id}}
                 {{#company_name}} and t1.company_name = :data.company_name {{/company_name}}
+                {{#deploy_time_from}}and t2.deploy_time >= :data.deploy_time_from{{/deploy_time_from}}
+                {{#deploy_time_to}}and t2.deploy_time <= :data.deploy_time_to{{/deploy_time_to}}
+                {{#suspension_state}}and t1.suspension_state = :data.suspension_state {{/suspension_state}}
             {{/data}}
             "
         })?;
@@ -281,6 +284,9 @@ mod tests{
             deployer_name: Some("1".to_owned()),
             company_id: Some("1".to_owned()),
             company_name: Some("1".to_owned()),
+            deploy_time_from: Some(1),
+            deploy_time_to: Some(1),
+            suspension_state: Some(0),
         };
         let rst = prcdef_dao.find_by_dto(&proc_def_dto).await.unwrap();
         assert_eq!(0, rst.len());
@@ -303,6 +309,9 @@ mod tests{
             deployer_name: Some("1".to_owned()),
             company_id: Some("1".to_owned()),
             company_name: Some("1".to_owned()),
+            deploy_time_from: Some(1),
+            deploy_time_to: Some(1),
+            suspension_state: Some(0),
         };
         let mut pg_dto = PageDto::new(2, 0, proc_def_dto);
         let rst = prcdef_dao.query_by_page(&mut pg_dto).await.unwrap();
